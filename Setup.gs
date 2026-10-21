@@ -83,3 +83,8 @@ function setFrontendUrl(url) {
   PropertiesService.getScriptProperties().setProperty('FRONTEND_URL', url);
   console.log('FRONTEND_URL = ' + url);
 }
+
+/** One-click version for the editor: points emailed links at the GitHub Pages site. */
+function setFrontendUrlNow() {
+  setFrontendUrl('https://photolinepayroll.github.io/EmployeeMasterlist');
+}
