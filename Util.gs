@@ -161,10 +161,10 @@ function appUrl_() {
 
 /** Builds a link to a frontend page, e.g. pageUrl_('apply', {t: token}). */
 function pageUrl_(page, params) {
-  const base = appUrl_();
+  const base = getProp_('FRONTEND_URL');
+  if (!base) throw new Error('Frontend URL is not set. Ask the system owner to run setFrontendUrlNow() in Apps Script.');
   const q = Object.keys(params || {}).map(function (k) { return k + '=' + encodeURIComponent(params[k]); }).join('&');
-  if (getProp_('FRONTEND_URL')) return base.replace(/\/+$/, '') + '/' + page + '.html' + (q ? '?' + q : '');
-  return base + '?page=' + page + (q ? '&' + q : '');
+  return base.replace(/\/+$/, '') + '/' + (page === 'login' ? 'index' : page) + '.html' + (q ? '?' + q : '');
 }
 
 function companyName_() {

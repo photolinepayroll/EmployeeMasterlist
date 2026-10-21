@@ -67,7 +67,11 @@
     let h = '<div class="row" style="margin-bottom:12px"><h2 class="grow">' + esc(r.AppID) + ' <span class="pill ' + esc(r.Status) + '">' + esc(r.Status) + '</span></h2>' +
       '<button class="btn ghost sm" id="close" type="button">' + icon('x') + ' Close</button></div>';
     if (r.Remarks) h += '<div class="notice">' + icon('info') + '<div>Remarks sent to applicant: ' + esc(r.Remarks) + '</div></div>';
-    if (!canEdit) h += '<div class="notice info">' + icon('info') + '<div>This entry is ' + esc(r.Status) + ' — waiting on the applicant, so it cannot be approved yet.</div></div>';
+    const canResend = r.Status === 'INVITED' || r.Status === 'RETURNED';
+    if (!canEdit) {
+      h += '<div class="notice info">' + icon('info') + '<div>This entry is ' + esc(r.Status) + ' — waiting on the applicant, so it cannot be approved yet.' +
+        (canResend ? '<div class="row" style="margin-top:10px"><button class="btn sm" id="resend" type="button">' + icon('send') + ' Resend invite</button></div><div id="resendout"></div>' : '') + '</div></div>';
+    }
     h += '<div class="card" id="aform"><h3>Applicant information</h3><div class="grid">';
     B.applicantSpec.forEach(f => { if (f.type !== 'file' && f.type !== 'files') h += fieldHtml(f, r.record[f.k], B.lists, 'a'); });
     h += '</div></div><div class="card"><h3>Documents</h3>' + filesHtml(r.files) + '</div>';
@@ -85,6 +89,15 @@
     wireBlurValidation($('#mform'), B.adminSpec);
     if (!canEdit) $$('#panel input,#panel select,#panel textarea').forEach(el => { el.disabled = true; });
     $$('[data-file]').forEach(a => { a.onclick = () => openFile(a.dataset.file); });
+    if ($('#resend')) {
+      $('#resend').onclick = function () {
+        const b = this; busy(b, true, 'Sending…');
+        secure('resendInvite', cur.AppID).then(res => {
+          $('#resendout').innerHTML = '<p style="margin:8px 0 4px">New invite emailed. The old link no longer works. Backup link:</p><input readonly value="' + esc(res.link) + '" onclick="this.select()" aria-label="Invite link">';
+          toast('Invite resent');
+        }).catch(e => toast(e.message)).then(() => busy(b, false));
+      };
+    }
     if (canEdit) {
       $('#save').onclick = function () { submitRecord('saveRecord', this, 'Saved'); };
       $('#appr').onclick = function () { submitRecord('approveApplication', this, 'Approved'); };
