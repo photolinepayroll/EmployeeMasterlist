@@ -14,7 +14,10 @@
 <body>
 <div id="chrome"></div>
 <main id="main" class="wrap narrow">
-  <div id="loading" class="card center"><span class="spin"></span> Loading your form…</div>
+  <div id="loading" class="card center" role="status">
+    <span class="spin"></span> Loading your form…
+    <div class="hint" id="slow" style="margin-top:6px">The first load can take up to 10 seconds. Please wait.</div>
+  </div>
   <div id="fatal" class="card hide"></div>
   <div id="done" class="card hide center">
     <div style="color:var(--accent);font-size:2.4rem" aria-hidden="true"></div>

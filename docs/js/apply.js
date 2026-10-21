@@ -8,11 +8,22 @@
   function fatal(msg) {
     $('#loading').classList.add('hide');
     const f = $('#fatal'); f.classList.remove('hide');
-    f.innerHTML = '<h2>Unable to open the form</h2><p>' + esc(msg) + '</p><p class="mute">Please contact HR for a new link.</p>';
+    const network = /server|connection/i.test(msg);
+    f.innerHTML = '<h2>Unable to open the form</h2><p>' + esc(msg) + '</p>' +
+      (network ? '<p><button class="btn" id="retry" type="button">' + icon('refresh') + ' Try again</button></p>'
+        : '<p class="mute">Please contact HR for a new link.</p>');
+    if (network) $('#retry').onclick = () => { f.classList.add('hide'); $('#loading').classList.remove('hide'); load(); };
   }
   if (!TOKEN) { fatal('This link is missing its access code.'); return; }
 
-  call('getApplicationByToken', TOKEN).then(r => {
+  load();
+  function load() {
+    $('#slow').textContent = 'The first load can take up to 10 seconds. Please wait.';
+    const t = setTimeout(() => { $('#slow').textContent = 'Still working… the server is waking up.'; }, 12000);
+    call('getApplicationByToken', TOKEN).then(onLoaded).catch(e => fatal(e.message)).then(() => clearTimeout(t));
+  }
+
+  function onLoaded(r) {
     S = r; data = r.data; files = r.files; consent = r.consent;
     $('#loading').classList.add('hide'); $('#app').classList.remove('hide');
     if (r.remarks) {
@@ -21,7 +32,7 @@
     }
     if (!r.editable) $('#locked').classList.remove('hide');
     render();
-  }).catch(e => fatal(e.message));
+  }
 
   const total = () => S.steps.length;
   const specFor = n => S.spec.filter(f => f.step === n);

@@ -8,12 +8,30 @@ const Session = {
   clear() { try { sessionStorage.clear(); } catch (e) { /* ignore */ } }
 };
 
+/** One request with a timeout. Apps Script can take several seconds on a cold start. */
+async function post_(body, ms) {
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), ms);
+  try {
+    return await fetch(window.API_URL, { method: 'POST', redirect: 'follow', body, signal: ctl.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function call(fn, ...args) {
+  const body = JSON.stringify({ fn, args });
+  // Uploads get a longer timeout; reads are retried once because the first Apps Script call is often slow or dropped.
+  const ms = fn === 'uploadFile' ? 120000 : 45000;
+  const retry = fn !== 'uploadFile' && fn !== 'submitApplication' && fn !== 'createInvite' && fn !== 'resendInvite';
   let res;
   try {
-    res = await fetch(window.API_URL, { method: 'POST', redirect: 'follow', body: JSON.stringify({ fn, args }) });
+    try { res = await post_(body, ms); }
+    catch (e) { if (!retry) throw e; res = await post_(body, ms); }
   } catch (e) {
-    throw new Error('Cannot reach the server. Check your connection and try again.');
+    throw new Error(e && e.name === 'AbortError'
+      ? 'The server is taking too long to respond. Please try again.'
+      : 'Cannot reach the server. Check your connection and try again.');
   }
   let j;
   try { j = await res.json(); } catch (e) { throw new Error('Unexpected server response. Please try again.'); }
