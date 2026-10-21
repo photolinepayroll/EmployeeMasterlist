@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Staff Login — Employee Masterlist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Fira+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/theme.css">
+</head>
+<body>
+<div id="chrome"></div>
+<main id="main" class="wrap xnarrow" style="margin-top:6vh">
+  <div class="card">
+    <h2>Staff login</h2>
+    <p class="mute" style="margin:6px 0 0">For HR, Payroll, Accounting and Audit. New hires: use the personal link HR emailed you.</p>
+
+    <form id="f1" novalidate>
+      <label for="email">Work email</label>
+      <input id="email" type="email" autocomplete="email" inputmode="email" placeholder="name@company.com" required>
+      <div class="err" id="e1" role="alert"></div>
+      <button class="btn" id="send" type="submit" style="width:100%;margin-top:16px">Send login code</button>
+    </form>
+
+    <form id="f2" class="hide" novalidate>
+      <div class="notice ok" role="status"><div>If your email is registered, a 6-digit code was sent. It expires in 10 minutes.</div></div>
+      <label for="code">6-digit code</label>
+      <input id="code" class="mono" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="123456" style="font-size:1.3rem;letter-spacing:.35em;text-align:center">
+      <div class="err" id="e2" role="alert"></div>
+      <button class="btn" id="verify" type="submit" style="width:100%;margin-top:16px">Log in</button>
+      <button class="btn ghost" id="back" type="button" style="width:100%;margin-top:8px">Use another email</button>
+    </form>
+  </div>
+  <p class="mute center" style="font-size:.82rem">Authorized use only. Activity is logged.</p>
+</main>
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/login.js"></script>
+</body>
+</html>

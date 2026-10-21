@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Payroll Masterlist — Employee Masterlist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Fira+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/theme.css">
+</head>
+<body>
+<div id="chrome"></div>
+<main id="main" class="wrap">
+  <div class="notice info no-print">
+    <span id="shield"></span>
+    <div>Confidential and read-only. This list shows only Bio ID, Full Name, Account No. and Account Type. Do not share outside Payroll, Accounting and Audit.</div>
+  </div>
+  <div class="card">
+    <div class="row" style="margin-bottom:12px">
+      <div style="flex:1;min-width:220px;max-width:340px"><input id="q" type="search" placeholder="Search name, Bio ID, account no.…" aria-label="Search"></div>
+      <select id="ftype" style="max-width:210px" aria-label="Filter by account type">
+        <option value="">All account types</option><option>Payroll Savings</option><option>Other Bank</option>
+      </select>
+      <span class="grow"></span>
+      <span class="mute" id="count" role="status"></span>
+      <span class="no-print row">
+        <button class="btn sm" id="csv" type="button"></button>
+        <button class="btn ghost sm" id="xlsx" type="button"></button>
+        <button class="btn ghost sm" id="print" type="button"></button>
+      </span>
+    </div>
+    <div class="tablewrap"><table><thead id="head"></thead><tbody id="rows"></tbody></table></div>
+    <div class="mute center" id="empty" style="padding:16px">Loading…</div>
+    <div class="hint" id="gen"></div>
+  </div>
+</main>
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/reports.js"></script>
+</body>
+</html>

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>HR Admin — Employee Masterlist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Fira+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/theme.css">
+</head>
+<body>
+<div id="chrome"></div>
+<main id="main" class="wrap">
+  <div class="tabs" id="tabs" role="tablist">
+    <button data-t="apps" class="on" role="tab">Applications</button>
+    <button data-t="invite" role="tab">New invite</button>
+    <button data-t="export" role="tab">Full export</button>
+    <button data-t="users" role="tab">Users &amp; access</button>
+  </div>
+
+  <section id="t_apps">
+    <div class="stats" id="stats"></div>
+    <div class="card">
+      <div class="row" style="margin-bottom:12px">
+        <div style="flex:1;min-width:220px;max-width:360px"><input id="q" type="search" placeholder="Search name, Bio ID, email, branch…" aria-label="Search applications"></div>
+        <select id="fstatus" style="max-width:190px" aria-label="Filter by status">
+          <option value="">All statuses</option><option>PENDING</option><option>RETURNED</option><option>INVITED</option><option>APPROVED</option><option>CANCELLED</option>
+        </select>
+        <button class="btn ghost sm" id="refresh" type="button"></button>
+      </div>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Status</th><th>Name</th><th>Bio ID</th><th>Branch</th><th>Email</th><th>Submitted</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table></div>
+      <div class="mute center" id="empty" style="padding:16px">Loading…</div>
+    </div>
+  </section>
+
+  <section id="t_invite" class="hide">
+    <div class="card" style="max-width:540px">
+      <h2>Invite a new hire</h2>
+      <p class="mute">The applicant receives a personal link by email to complete their information.</p>
+      <label for="iname">Applicant full name <span class="req">*</span></label><input id="iname" autocomplete="off">
+      <label for="iemail">Applicant email <span class="req">*</span></label><input id="iemail" type="email" autocomplete="off">
+      <label for="ibranch">Branch</label><select id="ibranch"></select>
+      <div class="err" id="ierr" role="alert"></div>
+      <p><button class="btn" id="isend" type="button"></button></p>
+      <div id="ilink" class="notice ok hide"></div>
+    </div>
+  </section>
+
+  <section id="t_export" class="hide">
+    <div class="card">
+      <h2>Full masterlist export</h2>
+      <p class="mute">All APPROVED employees with every field (document files are not included). Handle the download as confidential.</p>
+      <div class="row"><button class="btn" id="xcsv" type="button"></button><button class="btn ghost" id="xxlsx" type="button"></button></div>
+    </div>
+  </section>
+
+  <section id="t_users" class="hide">
+    <div class="card">
+      <h2>Users &amp; access</h2>
+      <div class="tablewrap" style="margin-top:12px"><table><thead><tr><th>Email</th><th>Role</th><th>Status</th><th></th></tr></thead><tbody id="urows"></tbody></table></div>
+      <h3 style="margin-top:20px">Add or update a user</h3>
+      <div class="grid">
+        <div><label for="uemail">Email</label><input id="uemail" type="email" autocomplete="off"></div>
+        <div><label for="urole">Role</label><select id="urole"></select></div>
+        <div><label for="uactive">Status</label><select id="uactive"><option value="1">Active</option><option value="0">Disabled</option></select></div>
+      </div>
+      <div class="err" id="uerr" role="alert"></div>
+      <p><button class="btn" id="usave" type="button">Save user</button></p>
+      <p class="hint">PAYROLL, ACCOUNTING and AUDIT see only Bio ID, Full Name, Account No. and Account Type, and can only view and download.</p>
+    </div>
+  </section>
+</main>
+
+<div class="drawer" id="drawer" aria-hidden="true"><div class="panel" id="panel" role="dialog" aria-modal="true" aria-label="Application review"></div></div>
+
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>

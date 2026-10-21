@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html>
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<?!= include('Styles') ?>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <h1><?= appName ?> — HR Admin</h1>
+  <span class="mute" id="who"></span>
+  <a class="btn ghost sm" href="#" id="toReports">Payroll report</a>
+  <button class="btn ghost sm" id="logout">Log out</button>
+</div></header>
+
+<div class="wrap">
+  <div class="tabs" id="tabs">
+    <button data-t="apps" class="on">Applications</button>
+    <button data-t="invite">New Invite</button>
+    <button data-t="export">Full Export</button>
+    <button data-t="users">Users &amp; Access</button>
+  </div>
+
+  <section id="t_apps">
+    <div class="stats" id="stats"></div>
+    <div class="card">
+      <div class="row" style="margin-bottom:10px">
+        <input id="q" placeholder="Search name, Bio ID, email, branch…" style="max-width:340px">
+        <select id="fstatus" style="max-width:180px"><option value="">All statuses</option><option>PENDING</option><option>RETURNED</option><option>INVITED</option><option>APPROVED</option><option>CANCELLED</option></select>
+        <button class="btn ghost sm" id="refresh">Refresh</button>
+      </div>
+      <div class="tablewrap"><table><thead><tr><th>Status</th><th>Name</th><th>Bio ID</th><th>Branch</th><th>Email</th><th>Submitted</th></tr></thead><tbody id="rows"></tbody></table></div>
+      <div class="mute center" id="empty" style="padding:14px">Loading…</div>
+    </div>
+  </section>
+
+  <section id="t_invite" class="hide">
+    <div class="card" style="max-width:520px">
+      <h2>Invite a new hire</h2>
+      <p class="mute">The applicant receives a personal link by email to fill in their information.</p>
+      <label for="iname">Applicant full name <span class="req">*</span></label><input id="iname">
+      <label for="iemail">Applicant email <span class="req">*</span></label><input id="iemail" type="email">
+      <label for="ibranch">Branch</label><select id="ibranch"></select>
+      <div class="err" id="ierr"></div>
+      <p><button class="btn" id="isend">Send invite</button></p>
+      <div id="ilink" class="notice ok hide"></div>
+    </div>
+  </section>
+
+  <section id="t_export" class="hide">
+    <div class="card">
+      <h2>Full masterlist export</h2>
+      <p class="mute">All APPROVED employees with every field (excluding document files). Handle the download as confidential.</p>
+      <div class="row"><button class="btn" id="xcsv">Download CSV</button><button class="btn ghost" id="xxlsx">Download Excel</button></div>
+    </div>
+  </section>
+
+  <section id="t_users" class="hide">
+    <div class="card">
+      <h2>Users &amp; access</h2>
+      <div class="tablewrap"><table><thead><tr><th>Email</th><th>Role</th><th>Active</th><th></th></tr></thead><tbody id="urows"></tbody></table></div>
+      <h3>Add / update user</h3>
+      <div class="grid">
+        <div><label for="uemail">Email</label><input id="uemail" type="email"></div>
+        <div><label for="urole">Role</label><select id="urole"></select></div>
+        <div><label for="uactive">Status</label><select id="uactive"><option value="1">Active</option><option value="0">Disabled</option></select></div>
+      </div>
+      <div class="err" id="uerr"></div>
+      <p><button class="btn" id="usave">Save user</button></p>
+      <p class="hint">PAYROLL, ACCOUNTING and AUDIT see only Bio ID, Full Name, Account No. and Account Type, and can only view and download.</p>
+    </div>
+  </section>
+</div>
+
+<div class="drawer" id="drawer"><div class="panel" id="panel"></div></div>
+
+<script>window.__BASE__ = <?!= JSON.stringify(baseUrl) ?>;</script>
+<?!= include('Client') ?>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+(function () {
+  if (!requireLogin(['HR_ADMIN'])) return;
+  let B = null, apps = [], cur = null;
+
+  $('#who').textContent = Session.email;
+  $('#logout').onclick = doLogout;
+  $('#toReports').onclick = function (e) { e.preventDefault(); goTo('reports'); };
+
+  secure('adminBootstrap').then(function (b) {
+    B = b;
+    $('#ibranch').innerHTML = '<option value="">—</option>' + b.lists.Branches.map(function (x) { return '<option>' + esc(x) + '</option>'; }).join('');
+    $('#urole').innerHTML = b.roles.map(function (r) { return '<option>' + r + '</option>'; }).join('');
+    loadApps();
+  }).catch(function (e) { toast(e.message); });
+
+  $$('#tabs button').forEach(function (b) {
+    b.onclick = function () {
+      $$('#tabs button').forEach(function (x) { x.classList.toggle('on', x === b); });
+      ['apps', 'invite', 'export', 'users'].forEach(function (t) { $('#t_' + t).classList.toggle('hide', t !== b.dataset.t); });
+      if (b.dataset.t === 'users') loadUsers();
+    };
+  });
+
+  /* ---------- Applications ---------- */
+  function loadApps() {
+    $('#empty').textContent = 'Loading…'; $('#empty').classList.remove('hide');
+    return secure('listApplications').then(function (r) { apps = r; drawApps(); }).catch(function (e) { $('#empty').textContent = e.message; });
+  }
+  function drawApps() {
+    const counts = { PENDING: 0, RETURNED: 0, INVITED: 0, APPROVED: 0 };
+    apps.forEach(function (a) { if (counts[a.Status] != null) counts[a.Status]++; });
+    $('#stats').innerHTML = Object.keys(counts).map(function (k) { return '<div class="stat"><b>' + counts[k] + '</b><span>' + k + '</span></div>'; }).join('');
+    const q = $('#q').value.toLowerCase(), fs = $('#fstatus').value;
+    const list = apps.filter(function (a) {
+      return (!fs || a.Status === fs) && (!q || [a.Name, a.BioID, a.Email, a.Branch, a.AppID].join(' ').toLowerCase().indexOf(q) >= 0);
+    });
+    $('#rows').innerHTML = list.map(function (a) {
+      return '<tr class="click" data-id="' + esc(a.AppID) + '"><td><span class="pill ' + esc(a.Status) + '">' + esc(a.Status) + '</span></td><td>' + esc(a.Name || '(not filled)') +
+        '</td><td>' + esc(a.BioID) + '</td><td>' + esc(a.Branch) + '</td><td>' + esc(a.Email) + '</td><td>' + esc(a.SubmittedAt) + '</td></tr>';
+    }).join('');
+    $('#empty').classList.toggle('hide', list.length > 0);
+    $('#empty').textContent = 'No records.';
+    $$('#rows tr').forEach(function (tr) { tr.onclick = function () { openRecord(tr.dataset.id); }; });
+  }
+  $('#q').oninput = drawApps; $('#fstatus').onchange = drawApps; $('#refresh').onclick = loadApps;
+
+  /* ---------- Review drawer ---------- */
+  function openRecord(id) {
+    $('#panel').innerHTML = '<p class="center"><span class="spin"></span> Loading…</p>';
+    $('#drawer').classList.add('open');
+    secure('getApplication', id).then(function (r) { cur = r; drawRecord(); })
+      .catch(function (e) { toast(e.message); closeDrawer(); });
+  }
+  function closeDrawer() { $('#drawer').classList.remove('open'); }
+  $('#drawer').onclick = function (e) { if (e.target === $('#drawer')) closeDrawer(); };
+
+  function drawRecord() {
+    const r = cur, canEdit = r.Status === 'PENDING' || r.Status === 'APPROVED';
+    let h = '<div class="row"><h2 class="grow">' + esc(r.AppID) + ' <span class="pill ' + esc(r.Status) + '">' + esc(r.Status) + '</span></h2><button class="btn ghost sm" id="close">Close</button></div>';
+    if (r.Remarks) h += '<div class="notice">Remarks sent to applicant: ' + esc(r.Remarks) + '</div>';
+    if (r.Status !== 'PENDING' && r.Status !== 'APPROVED') h += '<div class="notice">This entry is "' + esc(r.Status) + '" — waiting on the applicant, so it cannot be approved yet.</div>';
+    h += '<div class="card" id="aform"><h3 style="margin-top:0">Applicant information</h3><div class="grid">';
+    B.applicantSpec.forEach(function (f) { if (f.type !== 'file' && f.type !== 'files') h += fieldHtml(f, r.record[f.k], B.lists, 'a'); });
+    h += '</div></div><div class="card"><h3 style="margin-top:0">Documents</h3>' + filesHtml(r.files) + '</div>';
+    h += '<div class="card" id="mform"><h3 style="margin-top:0">HR admin entry</h3><div class="grid">';
+    B.adminSpec.forEach(function (f) { h += fieldHtml(f, r.record[f.k], B.lists, 'm'); });
+    h += '</div></div>';
+    if (canEdit) {
+      h += '<div class="row end"><button class="btn ghost" id="save">Save changes</button>' +
+        (r.Status === 'PENDING' ? '<button class="btn danger" id="ret">Return to applicant…</button>' : '') +
+        '<button class="btn ok" id="appr">' + (r.Status === 'APPROVED' ? 'Save approved record' : 'Approve → Masterlist') + '</button></div>';
+    }
+    $('#panel').innerHTML = h;
+    $('#close').onclick = closeDrawer;
+    if (!canEdit) $$('#panel input,#panel select,#panel textarea').forEach(function (el) { el.disabled = true; });
+    $$('[data-file]').forEach(function (a) { a.onclick = function () { openFile(a.dataset.file); }; });
+    if (canEdit) {
+      $('#save').onclick = function () { submitRecord('saveRecord', this, 'Saved'); };
+      $('#appr').onclick = function () { submitRecord('approveApplication', this, 'Approved'); };
+      if ($('#ret')) $('#ret').onclick = doReturn;
+    }
+  }
+
+  function filesHtml(f) {
+    const items = [];
+    if (f.MedicalFileId) items.push(['Medical: ' + f.MedicalFileId.name, f.MedicalFileId.id]);
+    if (f.NBIFileId) items.push(['NBI: ' + f.NBIFileId.name, f.NBIFileId.id]);
+    (f.OtherDocs || []).forEach(function (d) { items.push([d.name, d.id]); });
+    if (!items.length) return '<span class="mute">No documents uploaded.</span>';
+    return items.map(function (i) { return '<span class="filelink" data-file="' + esc(i[1]) + '">📄 ' + esc(i[0]) + '</span>'; }).join('');
+  }
+
+  function openFile(id) {
+    toast('Opening file…');
+    secure('getFile', cur.AppID, id).then(function (f) {
+      const blob = b64ToBlob(f.base64, f.mime), url = URL.createObjectURL(blob);
+      // Open in a new tab (images/PDF render inline); fall back to download when pop-ups are blocked.
+      const w = window.open(url, '_blank');
+      if (!w) downloadBlob(f.name, f.mime, blob);
+    }).catch(function (e) { toast(e.message); });
+  }
+
+  function gather() {
+    return Object.assign(readFields($('#aform'), B.applicantSpec), readFields($('#mform'), B.adminSpec));
+  }
+  function submitRecord(fn, btn, okMsg) {
+    showErrors($('#panel'), {});
+    busy(btn, true, 'Saving…');
+    secure(fn, cur.AppID, gather()).then(function () {
+      toast(okMsg); closeDrawer(); loadApps();
+    }).catch(function (e) {
+      busy(btn, false);
+      if (e.fields) { showErrors($('#panel'), e.fields); toast('Please fix the highlighted fields.'); } else toast(e.message);
+    });
+  }
+  function doReturn() {
+    // Inline form instead of prompt(): modal dialogs can be blocked inside the Apps Script sandbox.
+    if ($('#retbox')) return;
+    const box = document.createElement('div');
+    box.id = 'retbox'; box.className = 'card';
+    box.innerHTML = '<label for="retmsg">Tell the applicant what to correct (they will see this and be emailed)</label>' +
+      '<textarea id="retmsg" rows="3" maxlength="500"></textarea><div class="err" id="reterr"></div>' +
+      '<div class="row end" style="margin-top:8px"><button class="btn ghost sm" id="retcancel">Cancel</button><button class="btn danger sm" id="retgo">Send back</button></div>';
+    $('#panel').appendChild(box);
+    $('#retmsg').focus();
+    $('#retcancel').onclick = function () { box.remove(); };
+    $('#retgo').onclick = function () {
+      const remarks = $('#retmsg').value.trim();
+      if (!remarks) { $('#reterr').textContent = 'Enter remarks first.'; return; }
+      busy(this, true, 'Sending…');
+      const b = this;
+      secure('returnApplication', cur.AppID, remarks).then(function () { toast('Returned to applicant'); closeDrawer(); loadApps(); })
+        .catch(function (e) { busy(b, false); $('#reterr').textContent = e.message; });
+    };
+  }
+
+  /* ---------- Invite ---------- */
+  $('#isend').onclick = function () {
+    const b = this; $('#ierr').textContent = ''; $('#ilink').classList.add('hide');
+    busy(b, true, 'Sending…');
+    secure('createInvite', { name: $('#iname').value, email: $('#iemail').value, branch: $('#ibranch').value }).then(function (r) {
+      $('#ilink').classList.remove('hide');
+      $('#ilink').innerHTML = 'Invite emailed. Reference <b>' + esc(r.appId) + '</b>.<br>Backup link: <input readonly value="' + esc(r.link) + '" onclick="this.select()">';
+      $('#iname').value = ''; $('#iemail').value = '';
+      loadApps();
+    }).catch(function (e) { $('#ierr').textContent = e.message; }).then(function () { busy(b, false); });
+  };
+
+  /* ---------- Export ---------- */
+  function fetchExport(fmt) {
+    return secure('exportFullMasterlist').then(function (d) {
+      if (!d.rows.length) { toast('No approved employees yet.'); return null; }
+      return d;
+    });
+  }
+  $('#xcsv').onclick = function () {
+    fetchExport().then(function (d) { if (d) downloadBlob('Employee_Masterlist_FULL_' + stamp() + '.csv', 'text/csv;charset=utf-8', toCsv(d.headers, d.rows, [])); });
+  };
+  $('#xxlsx').onclick = function () {
+    fetchExport().then(function (d) {
+      if (!d) return;
+      if (typeof XLSX === 'undefined') { toast('Excel library failed to load; use CSV.'); return; }
+      const ws = XLSX.utils.aoa_to_sheet([d.headers].concat(d.rows.map(function (r) { return r.map(String); })));
+      const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Masterlist');
+      XLSX.writeFile(wb, 'Employee_Masterlist_FULL_' + stamp() + '.xlsx');
+    });
+  };
+
+  /* ---------- Users ---------- */
+  function loadUsers() {
+    secure('listUsers').then(function (us) {
+      $('#urows').innerHTML = us.map(function (u) {
+        return '<tr><td>' + esc(u.Email) + '</td><td>' + esc(u.Role) + '</td><td>' + (u.Active ? 'Active' : 'Disabled') +
+          '</td><td><button class="btn ghost sm" data-e="' + esc(u.Email) + '" data-r="' + esc(u.Role) + '" data-a="' + (u.Active ? 1 : 0) + '">Edit</button></td></tr>';
+      }).join('');
+      $$('#urows button').forEach(function (b) {
+        b.onclick = function () { $('#uemail').value = b.dataset.e; $('#urole').value = b.dataset.r; $('#uactive').value = b.dataset.a; };
+      });
+    }).catch(function (e) { toast(e.message); });
+  }
+  $('#usave').onclick = function () {
+    $('#uerr').textContent = '';
+    secure('upsertUser', $('#uemail').value, $('#urole').value, $('#uactive').value === '1').then(function () {
+      toast('User saved'); $('#uemail').value = ''; loadUsers();
+    }).catch(function (e) { $('#uerr').textContent = e.message; });
+  };
+})();
+</script>
+</body>
+</html>

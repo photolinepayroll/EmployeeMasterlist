@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Employee Information Form</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Fira+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/theme.css">
+</head>
+<body>
+<div id="chrome"></div>
+<main id="main" class="wrap narrow">
+  <div id="loading" class="card center"><span class="spin"></span> Loading your form…</div>
+  <div id="fatal" class="card hide"></div>
+  <div id="done" class="card hide center">
+    <div style="color:var(--accent);font-size:2.4rem" aria-hidden="true"></div>
+    <h2>Thank you — your form was submitted</h2>
+    <p class="mute">HR will review your information. If corrections are needed, you will receive an email with a new link. You may close this page.</p>
+  </div>
+
+  <div id="app" class="hide">
+    <div id="returned" class="notice bad hide" role="alert"></div>
+    <div id="locked" class="notice info hide"><div>This form was submitted and is under review. It can no longer be edited.</div></div>
+    <div class="stepper" aria-label="Progress">
+      <div class="meta"><span id="stepName"></span><span id="stepCount"></span></div>
+      <div class="bar"><i id="bar"></i></div>
+      <ol id="steps"></ol>
+    </div>
+    <form class="card" id="panel" novalidate></form>
+    <div class="row">
+      <button class="btn ghost" id="prev" type="button"></button>
+      <span class="grow"></span>
+      <span class="mute" id="saved" role="status" style="font-size:.85rem"></span>
+      <button class="btn" id="next" type="button"></button>
+    </div>
+  </div>
+</main>
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/apply.js"></script>
+</body>
+</html>

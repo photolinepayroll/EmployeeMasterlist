@@ -1,0 +1,8 @@
+PROMPT.txt
+README.md
+.clasp.json
+.claspignore
+docs/**
+.git/**
+.gitignore
+design-system/**
