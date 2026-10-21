@@ -88,3 +88,30 @@ function setFrontendUrl(url) {
 function setFrontendUrlNow() {
   setFrontendUrl('https://photolinepayroll.github.io/EmployeeMasterlist');
 }
+
+/** Run once: adds a "System" tab to the database Sheet with clickable links to the script, API and website. */
+function addSystemTab() {
+  const ss = db_();
+  let s = ss.getSheetByName('System');
+  if (!s) s = ss.insertSheet('System');
+  s.clear();
+  const rows = [
+    ['Item', 'Link / Note'],
+    ['Apps Script editor (code)', 'https://script.google.com/d/' + ScriptApp.getScriptId() + '/edit'],
+    ['Web app API (/exec)', getProp_('APP_URL') || ''],
+    ['Staff website (GitHub Pages)', getProp_('FRONTEND_URL') || '(run setFrontendUrlNow)'],
+    ['Drive folder (documents)', 'https://drive.google.com/drive/folders/' + getProp_('ROOT_FOLDER_ID')],
+    ['Note', 'Keep this Sheet and the Drive folder private. Do not share them with staff.']
+  ];
+  s.getRange(1, 1, rows.length, 2).setValues(rows);
+  s.getRange(1, 1, 1, 2).setFontWeight('bold').setBackground('#0f4c81').setFontColor('#ffffff');
+  s.getRange(2, 1, rows.length - 1, 1).setFontWeight('bold');
+  s.setColumnWidth(1, 240); s.setColumnWidth(2, 640);
+  for (let r = 2; r <= 5; r++) {
+    const v = String(rows[r - 1][1]);
+    if (/^https:\/\//.test(v)) {
+      s.getRange(r, 2).setRichTextValue(SpreadsheetApp.newRichTextValue().setText(v).setLinkUrl(v).build());
+    }
+  }
+  console.log('System tab ready: ' + ss.getUrl());
+}
