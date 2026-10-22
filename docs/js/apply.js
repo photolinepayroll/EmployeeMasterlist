@@ -109,10 +109,12 @@
     const errEl = $('[data-err="' + field + '"]');
     errEl.textContent = '';
     if (['application/pdf', 'image/jpeg', 'image/png'].indexOf(file.type) < 0) { errEl.textContent = 'Only PDF, JPG or PNG files are allowed.'; return; }
-    if (file.size > S.limits.maxBytes) { errEl.textContent = 'File is larger than 5 MB.'; return; }
     const zone = $('[data-drop="' + field + '"]');
     zone.style.opacity = '.6'; errEl.style.color = 'var(--ink-2)'; errEl.textContent = 'Uploading…';
-    readAsBase64(file).then(b64 => call('uploadFile', TOKEN, field, file.name, file.type, b64)).then(r => {
+    compressImage(file).then(f => {
+      if (f.size > S.limits.maxBytes) throw new Error('File is larger than 5 MB.');
+      return readAsBase64(f).then(b64 => call('uploadFile', TOKEN, field, f.name, f.type, b64));
+    }).then(r => {
       errEl.textContent = '';
       if (isMulti(field)) { files[field] = r.docs; $('#docs_' + field).innerHTML = docsList(field); }
       else { files[field] = r.file; $('#cur_' + field).innerHTML = curFile(r.file); }

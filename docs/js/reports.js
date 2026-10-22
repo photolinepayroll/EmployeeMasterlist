@@ -12,12 +12,20 @@
   $('#print').onclick = () => window.print();
 
   let D = null;
-  secure('getLimitedMasterlist').then(d => {
+  const CK = 'mlcache_report';
+  function show(d, stale) {
     D = d;
     $('#head').innerHTML = '<tr><th>#</th>' + d.columns.map(c => '<th>' + esc(c.label) + '</th>').join('') + '</tr>';
-    $('#gen').textContent = 'Generated ' + d.generatedAt;
+    $('#gen').textContent = (stale ? 'Updating… showing data from ' : 'Generated ') + d.generatedAt;
     draw();
-  }).catch(e => { $('#empty').textContent = e.message; });
+  }
+  // Show the last copy instantly (same tab session), then replace it with fresh data.
+  try { const old = sessionStorage.getItem(CK); if (old) show(JSON.parse(old), true); } catch (e) { /* ignore */ }
+  secure('getLimitedMasterlist').then(d => {
+    show(d, false);
+    try { sessionStorage.setItem(CK, JSON.stringify(d)); } catch (e) { /* storage full or blocked */ }
+  }).catch(e => { if (!D) $('#empty').textContent = e.message; else $('#gen').textContent = 'Could not refresh: ' + e.message; });
+  preloadXlsx();
 
   const mono = { BioID: 1, AccountNumber: 1 };
   function filtered() {

@@ -1,6 +1,7 @@
 (function () {
   if (!requireLogin(['HR_ADMIN'])) return;
   let B = null, apps = [], cur = null;
+  const fileCache = {};
 
   $('#chrome').innerHTML = topbar('HR Admin',
     '<span class="mute" style="font-size:.85rem">' + esc(Session.email) + '</span>' +
@@ -16,8 +17,11 @@
     B = b;
     $('#ibranch').innerHTML = '<option value="">—</option>' + b.lists.Branches.map(x => '<option>' + esc(x) + '</option>').join('');
     $('#urole').innerHTML = b.roles.map(r => '<option>' + r + '</option>').join('');
-    loadApps();
   }).catch(e => toast(e.message));
+  // The list does not depend on bootstrap, so load both in parallel; show the last copy while waiting.
+  try { const old = sessionStorage.getItem('mlcache_apps'); if (old) { apps = JSON.parse(old); drawApps(); } } catch (e) { /* ignore */ }
+  loadApps();
+  preloadXlsx();
 
   $$('#tabs button').forEach(b => {
     b.onclick = () => {
@@ -29,8 +33,11 @@
 
   /* ---------- applications ---------- */
   function loadApps() {
-    $('#empty').textContent = 'Loading…'; $('#empty').classList.remove('hide');
-    return secure('listApplications').then(r => { apps = r; drawApps(); }).catch(e => { $('#empty').textContent = e.message; });
+    if (!apps.length) { $('#empty').textContent = 'Loading…'; $('#empty').classList.remove('hide'); }
+    return secure('listApplications').then(r => {
+      apps = r; drawApps();
+      try { sessionStorage.setItem('mlcache_apps', JSON.stringify(r)); } catch (e) { /* ignore */ }
+    }).catch(e => { if (!apps.length) $('#empty').textContent = e.message; else toast(e.message); });
   }
   function drawApps() {
     const counts = { PENDING: 0, RETURNED: 0, INVITED: 0, APPROVED: 0 };
@@ -119,11 +126,17 @@
   }
 
   function openFile(id) {
+    const show = f => {
+      const url = URL.createObjectURL(f.blob);
+      const w = window.open(url, '_blank', 'noopener');
+      if (!w) downloadBlob(f.name, f.mime, f.blob);
+    };
+    if (fileCache[id]) return show(fileCache[id]);
     toast('Opening file…');
     secure('getFile', cur.AppID, id).then(f => {
-      const blob = b64ToBlob(f.base64, f.mime), url = URL.createObjectURL(blob);
-      const w = window.open(url, '_blank', 'noopener');
-      if (!w) downloadBlob(f.name, f.mime, blob);
+      f.blob = b64ToBlob(f.base64, f.mime); f.base64 = '';
+      fileCache[id] = f;   // reopening the same document in this session is instant
+      show(f);
     }).catch(e => toast(e.message));
   }
 

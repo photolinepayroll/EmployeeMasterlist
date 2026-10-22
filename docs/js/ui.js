@@ -184,6 +184,23 @@ function loadXlsx() {
     document.head.appendChild(s);
   });
 }
+/** Starts loading the Excel library in the background so the Excel button is instant. */
+function preloadXlsx() { setTimeout(() => { loadXlsx().catch(() => {}); }, 1500); }
+
+/** Shrinks phone photos before upload (max 1600 px, JPEG q0.82). PDFs and small images pass through. */
+function compressImage(file) {
+  if (file.type.indexOf('image/') !== 0 || file.size < 350 * 1024 || !window.createImageBitmap) return Promise.resolve(file);
+  return createImageBitmap(file).then(bmp => {
+    const k = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+    const c = document.createElement('canvas');
+    c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+    const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.drawImage(bmp, 0, 0, c.width, c.height);
+    return new Promise(res => c.toBlob(b => {
+      if (!b || b.size >= file.size) return res(file);
+      res(new File([b], file.name.replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' }));
+    }, 'image/jpeg', 0.82));
+  }).catch(() => file);
+}
 async function downloadXlsx(name, headers, rows, sheet) {
   const X = await loadXlsx();
   const ws = X.utils.aoa_to_sheet([headers].concat(rows.map(r => r.map(String))));

@@ -75,6 +75,8 @@ const FILE_FIELDS = {
 };
 const MULTI_FILE_FIELDS = ['OtherDocs', 'ResumeDocs', 'KasunduanDocs', 'PagsangAyonDocs', 'BreachDocs'];
 const MAX_SLOT_DOCS = 5;
+/** Employee columns that appear in the payroll report; changing any of them drops the cached report. */
+const REPORT_KEYS = ['Status', 'BioID', 'LastName', 'FirstName', 'MiddleName', 'Suffix', 'AccountNumber', 'AccountType'];
 
 const SEX = ['Male', 'Female'];
 const SUFFIXES = ['', 'Jr.', 'Sr.', 'II', 'III', 'IV', 'V'];

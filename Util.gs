@@ -105,6 +105,45 @@ function updateObj_(name, rowNum, obj) {
   range.setNumberFormat('@');
   range.setValues([current]);
   SHEET_MEMO_[name] = null;
+  if (name === SHEETS.EMP && REPORT_KEYS.some(function (k) { return Object.prototype.hasOwnProperty.call(obj, k); })) {
+    cacheDropBig_('rpt_limited');
+  }
+}
+
+/* CacheService values are capped at 100 KB, so larger JSON is split into chunks. Cache misses are always safe. */
+const CACHE_CHUNK_ = 40000;
+const CACHE_TTL_ = 1800;   // 30 min: bounds staleness after manual Sheet edits
+
+function cachePutBig_(key, obj) {
+  try {
+    const str = JSON.stringify(obj), cache = CacheService.getScriptCache(), all = {};
+    const n = Math.ceil(str.length / CACHE_CHUNK_);
+    for (let i = 0; i < n; i++) all[key + '_' + i] = str.slice(i * CACHE_CHUNK_, (i + 1) * CACHE_CHUNK_);
+    all[key] = String(n);
+    cache.putAll(all, CACHE_TTL_);
+  } catch (e) { console.warn('cache put failed: ' + e); }
+}
+
+function cacheGetBig_(key) {
+  try {
+    const cache = CacheService.getScriptCache();
+    const n = Number(cache.get(key));
+    if (!n) return null;
+    const keys = [];
+    for (let i = 0; i < n; i++) keys.push(key + '_' + i);
+    const parts = cache.getAll(keys);
+    let str = '';
+    for (let i = 0; i < n; i++) {
+      const p = parts[key + '_' + i];
+      if (p == null) return null;
+      str += p;
+    }
+    return JSON.parse(str);
+  } catch (e) { return null; }
+}
+
+function cacheDropBig_(key) {
+  try { CacheService.getScriptCache().remove(key); } catch (e) { /* ignore */ }
 }
 
 /** Neutralises spreadsheet formula injection and trims values. */
