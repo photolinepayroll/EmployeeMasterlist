@@ -18,7 +18,7 @@ function requestLoginCode(email) {
     audit_(email, '', 'LOGIN_UNKNOWN', '', 'Email not on allowlist');
     return generic;
   }
-  const code = String(Math.floor(100000 + Math.random() * 900000));
+  const code = String(100000 + (parseInt(uuid_().slice(0, 12), 16) % 900000));
   cache.put('otp_' + sha256_(email), sha256_(code + email), OTP_TTL_SEC);
   cache.remove('otpatt_' + sha256_(email));
   sendMail_(email, 'Your login code: ' + code,
@@ -59,10 +59,17 @@ function logout(token) {
   return true;
 }
 
+/** Active staff user or null. Positive hits are cached for 2 min; upsertUser clears the entry. */
 function activeUser_(email) {
+  const cache = CacheService.getScriptCache();
+  const key = 'usr_' + sha256_(email);
+  const hit = cache.get(key);
+  if (hit) { try { return JSON.parse(hit); } catch (e) { /* fall through */ } }
   const u = findBy_(SHEETS.USERS, 'Email', email);
   if (!u || !isTrue_(u.Active) || ALL_ROLES.indexOf(u.Role) < 0) return null;
-  return u;
+  const slim = { Email: u.Email, Role: u.Role };
+  cache.put(key, JSON.stringify(slim), 120);
+  return slim;
 }
 
 function session_(token) {

@@ -24,9 +24,26 @@ function rootFolder_() {
   return DriveApp.getFolderById(getProp_('ROOT_FOLDER_ID'));
 }
 
+/** Per-execution read caches (a new doPost starts empty). Writes and lock_ clear them. */
+let SHEET_MEMO_ = {};
+let HEADER_MEMO_ = {};
+const TARGETED_MIN_ROWS = 60;
+
+function headers_(name) {
+  if (!HEADER_MEMO_[name]) {
+    const s = sh_(name);
+    HEADER_MEMO_[name] = s.getRange(1, 1, 1, s.getLastColumn()).getValues()[0];
+  }
+  return HEADER_MEMO_[name];
+}
+
 /** Reads a sheet into an array of objects keyed by header. `_row` is the 1-based sheet row. */
 function readAll_(name) {
-  const values = sh_(name).getDataRange().getDisplayValues();
+  let values = SHEET_MEMO_[name];
+  if (!values) {
+    values = sh_(name).getDataRange().getDisplayValues();
+    SHEET_MEMO_[name] = values;
+  }
   const headers = values[0];
   const rows = [];
   for (let i = 1; i < values.length; i++) {
@@ -37,9 +54,27 @@ function readAll_(name) {
   return rows;
 }
 
+/** First row whose `key` equals `value`. Large sheets read just the key column plus the matching row. */
 function findBy_(name, key, value) {
   const v = String(value);
-  return readAll_(name).find(function (r) { return String(r[key]) === v; }) || null;
+  const s = sh_(name);
+  const lastRow = s.getLastRow();
+  if (SHEET_MEMO_[name] || lastRow <= TARGETED_MIN_ROWS) {
+    return readAll_(name).find(function (r) { return String(r[key]) === v; }) || null;
+  }
+  const headers = headers_(name);
+  const ci = headers.indexOf(key);
+  if (ci < 0) throw new Error('Missing column: ' + key);
+  const col = s.getRange(2, ci + 1, lastRow - 1, 1).getDisplayValues();
+  for (let i = 0; i < col.length; i++) {
+    if (unclean_(col[i][0]) === v) {
+      const vals = s.getRange(i + 2, 1, 1, headers.length).getDisplayValues()[0];
+      const o = { _row: i + 2 };
+      headers.forEach(function (h, j) { o[h] = unclean_(vals[j]); });
+      return o;
+    }
+  }
+  return null;
 }
 
 function appendObj_(name, cols, obj) {
@@ -48,21 +83,28 @@ function appendObj_(name, cols, obj) {
   const range = s.getRange(row, 1, 1, cols.length);
   range.setNumberFormat('@');
   range.setValues([cols.map(function (c) { return clean_(obj[c]); })]);
+  SHEET_MEMO_[name] = null;
   return row;
 }
 
 /** Updates only the keys present in `obj` on the given sheet row. */
 function updateObj_(name, rowNum, obj) {
   const s = sh_(name);
-  const lastCol = s.getLastColumn();
-  const headers = s.getRange(1, 1, 1, lastCol).getValues()[0];
-  const range = s.getRange(rowNum, 1, 1, lastCol);
-  const current = range.getValues()[0];
+  const headers = headers_(name);
+  let lo = -1, hi = -1;
   headers.forEach(function (h, j) {
-    if (Object.prototype.hasOwnProperty.call(obj, h)) current[j] = clean_(obj[h]);
+    if (Object.prototype.hasOwnProperty.call(obj, h)) { if (lo < 0) lo = j; hi = j; }
   });
+  if (lo < 0) return;
+  // Touch only the span of columns being changed, not the whole row.
+  const range = s.getRange(rowNum, lo + 1, 1, hi - lo + 1);
+  const current = range.getValues()[0];
+  for (let j = lo; j <= hi; j++) {
+    if (Object.prototype.hasOwnProperty.call(obj, headers[j])) current[j - lo] = clean_(obj[headers[j]]);
+  }
   range.setNumberFormat('@');
   range.setValues([current]);
+  SHEET_MEMO_[name] = null;
 }
 
 /** Neutralises spreadsheet formula injection and trims values. */
@@ -82,6 +124,7 @@ function unclean_(v) {
 function lock_(fn) {
   const lock = LockService.getScriptLock();
   lock.waitLock(20000);
+  SHEET_MEMO_ = {};   // another execution may have written while we waited
   try {
     return fn();
   } finally {

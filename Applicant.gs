@@ -73,34 +73,45 @@ function uploadFile(token, field, fileName, mime, base64) {
   if (bytes.length > MAX_FILE_BYTES) throw new Error('File is larger than 5 MB.');
   if (!magicOk_(bytes, mime)) throw new Error('File content does not match its type.');
 
-  return lock_(function () {
+  // Slow Drive work happens outside the global lock; only the sheet update is locked.
+  const pre = inviteByToken_(token);
+  if (EDITABLE_BY_APPLICANT.indexOf(pre.emp.Status) < 0) throw new Error('This form can no longer be edited.');
+  let folder = null;
+  if (pre.emp.FolderId) { try { folder = DriveApp.getFolderById(pre.emp.FolderId); } catch (e) { folder = null; } }
+  if (!folder) folder = lock_(function () { return applicantFolder_(inviteByToken_(token).emp); });
+  const display = safeName_(fileName);
+  const stored = FILE_FIELDS[field] + '_' + Date.now() + '.' + ALLOWED_MIME[mime];
+  const file = folder.createFile(Utilities.newBlob(bytes, mime, stored));
+  file.setDescription(display);
+  file.setSharing(DriveApp.Access.PRIVATE, DriveApp.Permission.NONE);
+
+  let oldId = '';
+  try {
+    const result = lock_(function () {
     const r = inviteByToken_(token);
     if (EDITABLE_BY_APPLICANT.indexOf(r.emp.Status) < 0) throw new Error('This form can no longer be edited.');
     const emp = r.emp;
-    const folder = applicantFolder_(emp);
-    const display = safeName_(fileName);
-    const stored = FILE_FIELDS[field] + '_' + Date.now() + '.' + ALLOWED_MIME[mime];
-    const file = folder.createFile(Utilities.newBlob(bytes, mime, stored));
-    file.setDescription(display);
-    file.setSharing(DriveApp.Access.PRIVATE, DriveApp.Permission.NONE);
 
     if (MULTI_FILE_FIELDS.indexOf(field) >= 0) {
       const docs = parseDocs_(emp[field]);
       const cap = maxDocs_(field);
-      if (docs.length >= cap) {
-        file.setTrashed(true);
-        throw new Error('Maximum of ' + cap + ' files here.');
-      }
+      if (docs.length >= cap) throw new Error('Maximum of ' + cap + ' files here.');
       docs.push({ id: file.getId(), name: display });
       const o = {}; o[field] = JSON.stringify(docs); o.UpdatedAt = nowIso_();
       updateObj_(SHEETS.EMP, emp._row, o);
       return { docs: docs };
     }
-    if (emp[field]) trashQuiet_(emp[field]);
+    oldId = emp[field] || '';
     const o = {}; o[field] = file.getId(); o.UpdatedAt = nowIso_();
     updateObj_(SHEETS.EMP, emp._row, o);
     return { file: { id: file.getId(), name: display } };
-  });
+    });
+    if (oldId) trashQuiet_(oldId);
+    return result;
+  } catch (e) {
+    trashQuiet_(file.getId());   // nothing references the new file
+    throw e;
+  }
 }
 
 function maxDocs_(field) {

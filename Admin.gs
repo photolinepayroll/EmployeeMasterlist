@@ -170,6 +170,7 @@ function upsertUser(token, email, role, active) {
     } else {
       appendObj_(SHEETS.USERS, USER_COLS, { Email: email, Role: role, Active: active ? 'TRUE' : 'FALSE', AddedBy: s.email, AddedAt: nowIso_() });
     }
+    CacheService.getScriptCache().remove('usr_' + sha256_(email));
     audit_(s.email, s.role, 'USER_UPSERT', email, role + (active ? '' : ' (inactive)'));
     return true;
   });
