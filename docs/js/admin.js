@@ -106,12 +106,16 @@
   }
 
   function filesHtml(f) {
-    const items = [];
-    if (f.MedicalFileId) items.push(['Medical: ' + f.MedicalFileId.name, f.MedicalFileId.id]);
-    if (f.NBIFileId) items.push(['NBI: ' + f.NBIFileId.name, f.NBIFileId.id]);
-    (f.OtherDocs || []).forEach(d => items.push([d.name, d.id]));
-    if (!items.length) return '<span class="mute">No documents uploaded.</span>';
-    return items.map(i => '<span class="chip" tabindex="0" role="button" data-file="' + esc(i[1]) + '">' + icon('file') + ' ' + esc(i[0]) + '</span>').join('');
+    const groups = [], byName = {};
+    B.applicantSpec.filter(s => s.type === 'file' || s.type === 'files').forEach(s => {
+      const v = f[s.k], list = Array.isArray(v) ? v : (v ? [v] : []);
+      const g = s.group || 'Documents';
+      if (!byName[g]) { byName[g] = []; groups.push(g); }
+      list.forEach(d => byName[g].push([s.label + ': ' + d.name, d.id]));
+    });
+    const chip = i => '<span class="chip" tabindex="0" role="button" data-file="' + esc(i[1]) + '">' + icon('file') + ' ' + esc(i[0]) + '</span>';
+    const h = groups.filter(g => byName[g].length).map(g => '<p class="mute" style="margin:10px 0 4px;font-size:.85rem">' + esc(g) + '</p>' + byName[g].map(chip).join('')).join('');
+    return h || '<span class="mute">No documents uploaded.</span>';
   }
 
   function openFile(id) {

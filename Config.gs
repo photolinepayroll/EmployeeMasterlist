@@ -44,7 +44,11 @@ const EMP_COLS = [
   'OtherDocs',
   'EmergencyName', 'EmergencyNo',
   'AccountType', 'Bank', 'AccountNumber', 'AccountName',
-  'FolderId', 'PrivacyConsent', 'SubmittedAt', 'ReviewedBy', 'ReviewedAt', 'Remarks', 'UpdatedAt'
+  'FolderId', 'PrivacyConsent', 'SubmittedAt', 'ReviewedBy', 'ReviewedAt', 'Remarks', 'UpdatedAt',
+  // Added later: always append new columns at the END (rows are written by position). Run addEmployeeColumns() once.
+  'TINFileId', 'SSSFileId', 'PhilHealthFileId', 'PagIBIGFileId',
+  'PSAFileId', 'ReferralFileId', 'IQFileId', 'PsychFileId',
+  'ResumeDocs', 'KasunduanDocs', 'PagsangAyonDocs', 'BreachDocs'
 ];
 const INV_COLS = ['TokenHash', 'AppID', 'Email', 'Name', 'Branch', 'CreatedBy', 'CreatedAt', 'ExpiresAt', 'Status'];
 const USER_COLS = ['Email', 'Role', 'Active', 'AddedBy', 'AddedAt'];
@@ -62,7 +66,15 @@ const ALLOWED_MIME = {
   'image/jpeg': 'jpg',
   'image/png': 'png'
 };
-const FILE_FIELDS = { MedicalFileId: 'MED', NBIFileId: 'NBI', OtherDocs: 'DOC' };
+/** Upload field -> stored-file prefix. Single-file fields hold one Drive id; MULTI_FILE_FIELDS hold JSON [{id,name}]. */
+const FILE_FIELDS = {
+  MedicalFileId: 'MED', NBIFileId: 'NBI',
+  TINFileId: 'TIN', SSSFileId: 'SSS', PhilHealthFileId: 'PHI', PagIBIGFileId: 'PAG',
+  PSAFileId: 'PSA', ReferralFileId: 'REF', IQFileId: 'IQT', PsychFileId: 'PSY',
+  OtherDocs: 'DOC', ResumeDocs: 'RES', KasunduanDocs: 'KAS', PagsangAyonDocs: 'PSG', BreachDocs: 'BRE'
+};
+const MULTI_FILE_FIELDS = ['OtherDocs', 'ResumeDocs', 'KasunduanDocs', 'PagsangAyonDocs', 'BreachDocs'];
+const MAX_SLOT_DOCS = 5;
 
 const SEX = ['Male', 'Female'];
 const SUFFIXES = ['', 'Jr.', 'Sr.', 'II', 'III', 'IV', 'V'];
@@ -86,6 +98,8 @@ const APPLY_STEPS = [
   'Contact & Branch',
   'Government IDs',
   'Medical & NBI',
+  'PSA, Referral & Exams',
+  'Application Attachments',
   'Other Documents',
   'Emergency Contact',
   'Review & Submit'
@@ -106,21 +120,35 @@ const APPLICANT_FIELDS = [
   { k: 'Branch', label: 'Branch', step: 2, req: true, type: 'select', list: 'Branches' },
 
   { k: 'TIN', label: 'TIN', step: 3, pattern: PATTERNS.tin, hint: '000-000-000 or 000-000-000-000' },
+  { k: 'TINFileId', label: 'TIN ID (photo)', step: 3, type: 'file', reqIf: 'TIN', group: 'Government ID proofs' },
   { k: 'SSS', label: 'SSS Number', step: 3, pattern: PATTERNS.sss, hint: '00-0000000-0' },
+  { k: 'SSSFileId', label: 'SSS ID (photo)', step: 3, type: 'file', reqIf: 'SSS', group: 'Government ID proofs' },
   { k: 'PhilHealth', label: 'PhilHealth Number', step: 3, pattern: PATTERNS.philhealth, hint: '00-000000000-0' },
+  { k: 'PhilHealthFileId', label: 'PhilHealth ID (photo)', step: 3, type: 'file', reqIf: 'PhilHealth', group: 'Government ID proofs' },
   { k: 'PagIBIG', label: 'Pag-IBIG MID Number', step: 3, pattern: PATTERNS.pagibig, hint: '0000-0000-0000' },
+  { k: 'PagIBIGFileId', label: 'Pag-IBIG ID (photo)', step: 3, type: 'file', reqIf: 'PagIBIG', group: 'Government ID proofs' },
 
   { k: 'MedicalDate', label: 'Medical Exam Date', step: 4, req: true, type: 'date', notFuture: true },
   { k: 'MedicalResult', label: 'Medical Result', step: 4, req: true, type: 'select', list: 'MedicalResults' },
-  { k: 'MedicalFileId', label: 'Pre-Employment Medical (scan)', step: 4, req: true, type: 'file' },
+  { k: 'MedicalFileId', label: 'Pre-Employment Medical (scan)', step: 4, req: true, type: 'file', group: 'Medical & NBI' },
   { k: 'NBINo', label: 'NBI Clearance Number', step: 4, req: true, max: 40 },
   { k: 'NBIValidity', label: 'NBI Valid Until', step: 4, req: true, type: 'date' },
-  { k: 'NBIFileId', label: 'NBI Clearance (scan)', step: 4, req: true, type: 'file' },
+  { k: 'NBIFileId', label: 'NBI Clearance (scan)', step: 4, req: true, type: 'file', group: 'Medical & NBI' },
 
-  { k: 'OtherDocs', label: 'Other Credential Documents', step: 5, type: 'files', hint: 'Diploma, TOR, certificates, valid IDs, etc. Up to 10 files.' },
+  { k: 'PSAFileId', label: 'PSA Birth Certificate', step: 5, req: true, type: 'file', group: 'PSA, Referral & Exams' },
+  { k: 'ReferralFileId', label: 'Referral Letter (optional)', step: 5, type: 'file', group: 'PSA, Referral & Exams' },
+  { k: 'IQFileId', label: 'Exam Result: IQ Test', step: 5, req: true, type: 'file', group: 'PSA, Referral & Exams' },
+  { k: 'PsychFileId', label: 'Exam Result: Psychological', step: 5, req: true, type: 'file', group: 'PSA, Referral & Exams' },
 
-  { k: 'EmergencyName', label: 'Emergency Contact Name', step: 6, req: true, max: 100 },
-  { k: 'EmergencyNo', label: 'Emergency Contact Number', step: 6, req: true, type: 'tel', pattern: PATTERNS.phone }
+  { k: 'ResumeDocs', label: 'Resume', step: 6, req: true, type: 'files', max: MAX_SLOT_DOCS, hint: 'Up to 5 files (PDF, JPG or PNG).', group: 'Application attachments' },
+  { k: 'KasunduanDocs', label: 'Kasunduan', step: 6, req: true, type: 'files', max: MAX_SLOT_DOCS, hint: 'Signed copy; upload all pages (up to 5 files).', group: 'Application attachments' },
+  { k: 'PagsangAyonDocs', label: 'Pagsang-ayon', step: 6, req: true, type: 'files', max: MAX_SLOT_DOCS, hint: 'Signed copy; upload all pages (up to 5 files).', group: 'Application attachments' },
+  { k: 'BreachDocs', label: 'Breach of Contract / Karagdagang Kasunduan', step: 6, req: true, type: 'files', max: MAX_SLOT_DOCS, hint: 'Signed copy; upload all pages (up to 5 files).', group: 'Application attachments' },
+
+  { k: 'OtherDocs', label: 'Other Credential Documents', step: 7, type: 'files', max: MAX_OTHER_DOCS, hint: 'Diploma, TOR, certificates, etc. Up to 10 files.', group: 'Other documents' },
+
+  { k: 'EmergencyName', label: 'Emergency Contact Name', step: 8, req: true, max: 100 },
+  { k: 'EmergencyNo', label: 'Emergency Contact Number', step: 8, req: true, type: 'tel', pattern: PATTERNS.phone }
 ];
 
 /** Fields only HR Admin can fill in (never shown to applicants or report roles). */

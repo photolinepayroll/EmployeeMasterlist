@@ -35,7 +35,7 @@ function getApplicationByToken(token) {
     steps: APPLY_STEPS,
     lists: getLists_(),
     company: companyName_(),
-    limits: { maxBytes: MAX_FILE_BYTES, maxOther: MAX_OTHER_DOCS }
+    limits: { maxBytes: MAX_FILE_BYTES }
   };
 }
 
@@ -62,7 +62,7 @@ function applicantFolder_(emp) {
 }
 
 /**
- * Uploads one document. field = MedicalFileId | NBIFileId | OtherDocs.
+ * Uploads one document. field = any key of FILE_FIELDS (Config.gs).
  * Single-file fields replace (and trash) any earlier upload.
  */
 function uploadFile(token, field, fileName, mime, base64) {
@@ -84,14 +84,16 @@ function uploadFile(token, field, fileName, mime, base64) {
     file.setDescription(display);
     file.setSharing(DriveApp.Access.PRIVATE, DriveApp.Permission.NONE);
 
-    if (field === 'OtherDocs') {
-      const docs = parseDocs_(emp.OtherDocs);
-      if (docs.length >= MAX_OTHER_DOCS) {
+    if (MULTI_FILE_FIELDS.indexOf(field) >= 0) {
+      const docs = parseDocs_(emp[field]);
+      const cap = maxDocs_(field);
+      if (docs.length >= cap) {
         file.setTrashed(true);
-        throw new Error('Maximum of ' + MAX_OTHER_DOCS + ' other documents.');
+        throw new Error('Maximum of ' + cap + ' files here.');
       }
       docs.push({ id: file.getId(), name: display });
-      updateObj_(SHEETS.EMP, emp._row, { OtherDocs: JSON.stringify(docs), UpdatedAt: nowIso_() });
+      const o = {}; o[field] = JSON.stringify(docs); o.UpdatedAt = nowIso_();
+      updateObj_(SHEETS.EMP, emp._row, o);
       return { docs: docs };
     }
     if (emp[field]) trashQuiet_(emp[field]);
@@ -101,15 +103,23 @@ function uploadFile(token, field, fileName, mime, base64) {
   });
 }
 
-function removeOtherDoc(token, fileId) {
+function maxDocs_(field) {
+  const f = APPLICANT_FIELDS.find(function (x) { return x.k === field; });
+  return (f && f.max) || MAX_OTHER_DOCS;
+}
+
+/** Removes one file from a multi-file field. */
+function removeDoc(token, field, fileId) {
+  if (MULTI_FILE_FIELDS.indexOf(field) < 0) throw new Error('Unknown upload field.');
   return lock_(function () {
     const r = inviteByToken_(token);
     if (EDITABLE_BY_APPLICANT.indexOf(r.emp.Status) < 0) throw new Error('This form can no longer be edited.');
-    const docs = parseDocs_(r.emp.OtherDocs);
+    const docs = parseDocs_(r.emp[field]);
     const keep = docs.filter(function (d) { return d.id !== fileId; });
     if (keep.length === docs.length) throw new Error('Document not found.');
     trashQuiet_(fileId);
-    updateObj_(SHEETS.EMP, r.emp._row, { OtherDocs: JSON.stringify(keep), UpdatedAt: nowIso_() });
+    const o = {}; o[field] = JSON.stringify(keep); o.UpdatedAt = nowIso_();
+    updateObj_(SHEETS.EMP, r.emp._row, o);
     return { docs: keep };
   });
 }
@@ -136,7 +146,17 @@ function submitApplication(token, data, consent) {
     const v = validateFields_(APPLICANT_FIELDS, data, getLists_(), false);
     const errors = v.errors;
     APPLICANT_FIELDS.forEach(function (f) {
-      if (f.type === 'file' && f.req && !emp[f.k]) errors[f.k] = f.label + ' is required.';
+      if (f.type === 'file') {
+        const has = !!emp[f.k];
+        if (f.req && !has) errors[f.k] = f.label + ' is required.';
+        if (f.reqIf) {
+          const num = v.clean[f.reqIf];
+          if (num && !has) errors[f.k] = f.label + ' is required when the number is entered.';
+          if (!num && has && !errors[f.reqIf]) errors[f.reqIf] = 'Enter the number shown on the ID you attached.';
+        }
+      } else if (f.type === 'files' && f.req && !parseDocs_(emp[f.k]).length) {
+        errors[f.k] = 'Attach at least one file for ' + f.label + '.';
+      }
     });
     // The same person must not be submitted twice under different invites.
     const dup = readAll_(SHEETS.EMP).find(function (e) {

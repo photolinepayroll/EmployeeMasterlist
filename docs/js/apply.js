@@ -94,14 +94,16 @@
   }
   function curFile(c) { return c ? '<span class="chip" style="cursor:default">' + icon('check') + ' ' + esc(c.name) + '</span>' : '<span class="mute" style="font-size:.88rem">No file uploaded yet</span>'; }
   function otherDocsHtml(f) {
-    return '<div class="fld full"><label>' + esc(f.label) + '</label><div id="docs">' + docsList() + '</div>' + dropzone('OtherDocs', true) +
-      '<div class="hint">' + esc(f.hint || '') + '</div><div class="err" role="alert" data-err="OtherDocs"></div></div>';
+    return '<div class="fld full"><label>' + esc(f.label) + (f.req ? ' <span class="req" aria-hidden="true">*</span>' : '') + '</label><div id="docs_' + f.k + '">' + docsList(f.k) + '</div>' + dropzone(f.k, true) +
+      '<div class="hint">' + esc(f.hint || '') + '</div><div class="err" role="alert" data-err="' + f.k + '"></div></div>';
   }
-  function docsList() {
-    if (!files.OtherDocs || !files.OtherDocs.length) return '<span class="mute" style="font-size:.88rem">No documents uploaded</span>';
-    return files.OtherDocs.map(d => '<span class="chip" style="cursor:default">' + icon('file') + ' ' + esc(d.name) +
-      (S.editable ? ' <button type="button" aria-label="Remove ' + esc(d.name) + '" data-rm="' + esc(d.id) + '">' + icon('x') + '</button>' : '') + '</span>').join('');
+  function docsList(k) {
+    const list = files[k] || [];
+    if (!list.length) return '<span class="mute" style="font-size:.88rem">No documents uploaded</span>';
+    return list.map(d => '<span class="chip" style="cursor:default">' + icon('file') + ' ' + esc(d.name) +
+      (S.editable ? ' <button type="button" aria-label="Remove ' + esc(d.name) + '" data-rm="' + esc(d.id) + '" data-field="' + k + '">' + icon('x') + '</button>' : '') + '</span>').join('');
   }
+  const isMulti = k => S.spec.some(f => f.k === k && f.type === 'files');
 
   function uploadSelected(field, file, inputEl) {
     const errEl = $('[data-err="' + field + '"]');
@@ -112,7 +114,7 @@
     zone.style.opacity = '.6'; errEl.style.color = 'var(--ink-2)'; errEl.textContent = 'Uploading…';
     readAsBase64(file).then(b64 => call('uploadFile', TOKEN, field, file.name, file.type, b64)).then(r => {
       errEl.textContent = '';
-      if (field === 'OtherDocs') { files.OtherDocs = r.docs; $('#docs').innerHTML = docsList(); }
+      if (isMulti(field)) { files[field] = r.docs; $('#docs_' + field).innerHTML = docsList(field); }
       else { files[field] = r.file; $('#cur_' + field).innerHTML = curFile(r.file); }
       wireFiles();
     }).catch(e => { errEl.textContent = e.message; })
@@ -129,8 +131,8 @@
       z.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (f) uploadSelected(z.dataset.drop, f); });
     });
     $$('[data-rm]').forEach(b => {
-      b.onclick = () => call('removeOtherDoc', TOKEN, b.dataset.rm)
-        .then(r => { files.OtherDocs = r.docs; $('#docs').innerHTML = docsList(); wireFiles(); })
+      b.onclick = () => call('removeDoc', TOKEN, b.dataset.field, b.dataset.rm)
+        .then(r => { files[b.dataset.field] = r.docs; $('#docs_' + b.dataset.field).innerHTML = docsList(b.dataset.field); wireFiles(); })
         .catch(e => toast(e.message));
     });
   }
@@ -139,9 +141,16 @@
     let h = '<p class="mute">Please review your answers. Use Back to correct anything.</p><dl class="kv">';
     textSpec(S.spec).forEach(f => { h += '<dt>' + esc(f.label) + '</dt><dd>' + esc(data[f.k] || '—') + '</dd>'; });
     const miss = '<b style="color:var(--danger)">Missing</b>';
-    h += '<dt>Medical scan</dt><dd>' + (files.MedicalFileId ? esc(files.MedicalFileId.name) : miss) + '</dd>';
-    h += '<dt>NBI scan</dt><dd>' + (files.NBIFileId ? esc(files.NBIFileId.name) : miss) + '</dd>';
-    h += '<dt>Other documents</dt><dd>' + ((files.OtherDocs || []).length || 'None') + '</dd></dl>';
+    S.spec.forEach(f => {
+      if (f.type === 'file') {
+        const need = f.req || (f.reqIf && data[f.reqIf]);
+        h += '<dt>' + esc(f.label) + '</dt><dd>' + (files[f.k] ? esc(files[f.k].name) : need ? miss : '—') + '</dd>';
+      } else if (f.type === 'files') {
+        const n = (files[f.k] || []).length;
+        h += '<dt>' + esc(f.label) + '</dt><dd>' + (n ? n + ' file' + (n > 1 ? 's' : '') : f.req ? miss : 'None') + '</dd>';
+      }
+    });
+    h += '</dl>';
     return h;
   }
 
@@ -161,7 +170,12 @@
         const v = validateSpec($('#panel'), textSpec(specFor(step)));
         let missingFile = false;
         specFor(step).forEach(f => {
-          if (f.type === 'file' && f.req && !files[f.k]) { setErr($('#panel'), f.k, f.label + ' is required.'); missingFile = true; }
+          const miss = m => { setErr($('#panel'), f.k, m); missingFile = true; };
+          if (f.type === 'file') {
+            if (f.req && !files[f.k]) miss(f.label + ' is required.');
+            else if (f.reqIf && data[f.reqIf] && !files[f.k]) miss(f.label + ' is required when the number is entered.');
+            else if (f.reqIf && !data[f.reqIf] && files[f.k]) { setErr($('#panel'), f.reqIf, 'Enter the number shown on the ID you attached.'); missingFile = true; }
+          } else if (f.type === 'files' && f.req && !(files[f.k] || []).length) miss('Attach at least one file for ' + f.label + '.');
         });
         if (!v.ok || missingFile) return;
       }

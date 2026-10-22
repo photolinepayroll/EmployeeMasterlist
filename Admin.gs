@@ -46,8 +46,7 @@ function getFile(token, appId, fileId) {
   const s = requireRole_(token, HR_ONLY);
   const emp = findBy_(SHEETS.EMP, 'AppID', appId);
   if (!emp) throw new Error('Record not found.');
-  const ids = [emp.MedicalFileId, emp.NBIFileId].concat(parseDocs_(emp.OtherDocs).map(function (d) { return d.id; }));
-  if (ids.indexOf(fileId) < 0) throw new Error('File does not belong to this record.');
+  if (fileIds_(emp).indexOf(fileId) < 0) throw new Error('File does not belong to this record.');
   const f = DriveApp.getFileById(fileId);
   audit_(s.email, s.role, 'OPEN_FILE', appId, f.getDescription());
   return { name: f.getDescription() || f.getName(), mime: f.getMimeType(), base64: Utilities.base64Encode(f.getBlob().getBytes()) };

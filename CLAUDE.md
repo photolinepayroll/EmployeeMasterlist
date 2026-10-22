@@ -15,6 +15,7 @@ HR web app: a secure masterlist of hired employees. Applicants fill a form from 
 - Roles: `HR_ADMIN` (everything), `PAYROLL`/`ACCOUNTING`/`AUDIT` (limited report: Bio ID, Full Name, Account No., Account Type only, APPROVED rows).
 - Staff log in with email + 6-digit emailed code (CacheService sessions, 6h). Applicants use invite tokens (stored as SHA-256 hashes, 14-day expiry).
 - Field rules (formats, required fields, admin vs applicant fields) live in `Config.gs` (`APPLICANT_FIELDS`, `ADMIN_FIELDS`); the browser gets them from the server, so change them only there.
+- Attachments: every upload is a `type:'file'` (one Drive id) or `type:'files'` (JSON list, listed in `MULTI_FILE_FIELDS`) field in `APPLICANT_FIELDS` + `FILE_FIELDS`. `reqIf:'TIN'` makes a photo required when that number is filled. New `EMP_COLS` go at the END (rows are written by position); then run `addEmployeeColumns()` in the Apps Script editor once.
 
 ## Commands
 - Push backend: `clasp push --force` (run from repo root; `.claspignore` excludes `docs/`, README, `.git`).

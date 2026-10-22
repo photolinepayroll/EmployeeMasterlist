@@ -275,11 +275,21 @@ function fileMeta_(id) {
 }
 
 function filesInfo_(emp) {
-  return {
-    MedicalFileId: fileMeta_(emp.MedicalFileId),
-    NBIFileId: fileMeta_(emp.NBIFileId),
-    OtherDocs: parseDocs_(emp.OtherDocs)
-  };
+  const out = {};
+  Object.keys(FILE_FIELDS).forEach(function (k) {
+    out[k] = MULTI_FILE_FIELDS.indexOf(k) >= 0 ? parseDocs_(emp[k]) : fileMeta_(emp[k]);
+  });
+  return out;
+}
+
+/** Every Drive file id attached to a record (used to authorise HR downloads). */
+function fileIds_(emp) {
+  let ids = [];
+  Object.keys(FILE_FIELDS).forEach(function (k) {
+    if (MULTI_FILE_FIELDS.indexOf(k) >= 0) ids = ids.concat(parseDocs_(emp[k]).map(function (d) { return d.id; }));
+    else if (emp[k]) ids.push(emp[k]);
+  });
+  return ids;
 }
 
 function sendMail_(to, subject, html) {

@@ -115,3 +115,18 @@ function addSystemTab() {
   }
   console.log('System tab ready: ' + ss.getUrl());
 }
+
+/** Run once after adding columns to EMP_COLS: appends any missing headers to the live Employees tab. */
+function addEmployeeColumns() {
+  const s = sh_(SHEETS.EMP);
+  const have = s.getRange(1, 1, 1, s.getLastColumn()).getValues()[0];
+  const missing = EMP_COLS.filter(function (c) { return have.indexOf(c) < 0; });
+  if (!missing.length) { console.log('Employees tab already has all columns.'); return; }
+  // Rows are written by position, so the sheet must match EMP_COLS order exactly.
+  if (have.some(function (h, i) { return h !== EMP_COLS[i]; })) throw new Error('Existing headers are out of order; fix the Employees tab manually.');
+  const start = have.length + 1;
+  const range = s.getRange(1, start, 1, missing.length);
+  range.setValues([missing]).setFontWeight('bold').setBackground('#0f4c81').setFontColor('#ffffff');
+  s.getRange(2, start, Math.max(s.getMaxRows() - 1, 1), missing.length).setNumberFormat('@');
+  console.log('Added columns: ' + missing.join(', '));
+}

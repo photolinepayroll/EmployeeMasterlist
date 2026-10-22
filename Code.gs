@@ -28,7 +28,7 @@ function doGet(e) {
 /** Only these functions can be called from the browser via doPost. Everything else stays private. */
 const API_ALLOWED_ = [
   'requestLoginCode', 'verifyLoginCode', 'logout', 'whoAmI',
-  'getApplicationByToken', 'saveDraft', 'uploadFile', 'removeOtherDoc', 'submitApplication',
+  'getApplicationByToken', 'saveDraft', 'uploadFile', 'removeDoc', 'submitApplication',
   'adminBootstrap', 'listApplications', 'getApplication', 'getFile', 'saveRecord',
   'approveApplication', 'returnApplication', 'exportFullMasterlist', 'listUsers', 'upsertUser',
   'createInvite', 'resendInvite', 'revokeInvite',

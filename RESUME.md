@@ -10,6 +10,9 @@ Read `CLAUDE.md` first for architecture, IDs and gotchas. This file is the sessi
 - Old server-rendered HTML pages removed from the Apps Script project; `doGet` forwards old links to the site.
 - Added helpers in `Setup.gs`: `setAppUrlNow`, `setFrontendUrlNow`, `addSystemTab`, `saveAppUrl`, `setCompanyName`.
 
+## Attachments update (2026-10-22, committed locally, NOT yet pushed/deployed)
+Gov-ID photos, PSA, referral, IQ/psych results and 4 multi-file application slots added (spec: `docs/superpowers/specs/2026-10-22-applicant-attachments-design.md`). Rollout: `clasp push --force` + redeploy, run `addEmployeeColumns()` in the editor, then `git push`.
+
 ## Pending / next steps (user must run in the Apps Script editor)
 1. Run `setFrontendUrlNow()` so emails link to the GitHub Pages site (until then invites fail with "Frontend URL is not set").
 2. Run `addSystemTab()` to add the "System" links tab to the Sheet (re-run after step 1).
