@@ -123,12 +123,12 @@ const APPLICANT_FIELDS = [
 
   { k: 'TIN', label: 'TIN', step: 3, pattern: PATTERNS.tin, hint: '000-000-000 or 000-000-000-000' },
   { k: 'TINFileId', label: 'TIN ID (photo)', step: 3, type: 'file', reqIf: 'TIN', group: 'Government ID proofs' },
-  { k: 'SSS', label: 'SSS Number', step: 3, pattern: PATTERNS.sss, hint: '00-0000000-0' },
-  { k: 'SSSFileId', label: 'SSS ID (photo)', step: 3, type: 'file', reqIf: 'SSS', group: 'Government ID proofs' },
-  { k: 'PhilHealth', label: 'PhilHealth Number', step: 3, pattern: PATTERNS.philhealth, hint: '00-000000000-0' },
-  { k: 'PhilHealthFileId', label: 'PhilHealth ID (photo)', step: 3, type: 'file', reqIf: 'PhilHealth', group: 'Government ID proofs' },
-  { k: 'PagIBIG', label: 'Pag-IBIG MID Number', step: 3, pattern: PATTERNS.pagibig, hint: '0000-0000-0000' },
-  { k: 'PagIBIGFileId', label: 'Pag-IBIG ID (photo)', step: 3, type: 'file', reqIf: 'PagIBIG', group: 'Government ID proofs' },
+  { k: 'SSS', label: 'SSS Number', step: 3, req: true, pattern: PATTERNS.sss, hint: '00-0000000-0' },
+  { k: 'SSSFileId', label: 'SSS ID (photo)', step: 3, type: 'file', req: true, group: 'Government ID proofs' },
+  { k: 'PhilHealth', label: 'PhilHealth Number', step: 3, req: true, pattern: PATTERNS.philhealth, hint: '00-000000000-0' },
+  { k: 'PhilHealthFileId', label: 'PhilHealth ID (photo)', step: 3, type: 'file', req: true, group: 'Government ID proofs' },
+  { k: 'PagIBIG', label: 'Pag-IBIG MID Number', step: 3, req: true, pattern: PATTERNS.pagibig, hint: '0000-0000-0000' },
+  { k: 'PagIBIGFileId', label: 'Pag-IBIG ID (photo)', step: 3, type: 'file', req: true, group: 'Government ID proofs' },
 
   { k: 'MedicalDate', label: 'Medical Exam Date', step: 4, req: true, type: 'date', notFuture: true },
   { k: 'MedicalResult', label: 'Medical Result', step: 4, req: true, type: 'select', list: 'MedicalResults' },
