@@ -21,10 +21,10 @@ function requestLoginCode(email) {
   const code = String(100000 + (parseInt(uuid_().slice(0, 12), 16) % 900000));
   cache.put('otp_' + sha256_(email), sha256_(code + email), OTP_TTL_SEC);
   cache.remove('otpatt_' + sha256_(email));
-  sendMail_(email, 'Your login code: ' + code,
-    mailShell_('Login code',
-      '<p>Your one-time login code is:</p><p style="font-size:28px;letter-spacing:6px;font-weight:bold">' + code + '</p>' +
-      '<p>It expires in 10 minutes. If you did not request it, ignore this email.</p>'));
+  sendMail_(email, companyName_() + ': your login code ' + code,
+    mailShell_('Your login code',
+      '<p>Use this code to sign in to the ' + esc_(companyName_()) + '.</p>' + mailCode_(code) +
+      '<p>The code expires in 10 minutes. If you did not request it, you can ignore this email.</p>'));
   audit_(email, user.Role, 'LOGIN_CODE_SENT', '', '');
   return generic;
 }

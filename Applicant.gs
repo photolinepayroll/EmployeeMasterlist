@@ -199,7 +199,7 @@ function notifyHr_(appId, name) {
         sendMail_(u.Email, 'New application to review: ' + name,
           mailShell_('Application submitted',
             '<p><b>' + esc_(name) + '</b> (' + esc_(appId) + ') submitted an application for review.</p>' +
-            '<p><a href="' + esc_(pageUrl_('admin')) + '">Open HR Admin</a></p>'));
+            mailButton_('Open HR Admin', pageUrl_('admin'))));
       });
   } catch (e) { console.error('notifyHr_ failed: ' + e); }
 }

@@ -31,11 +31,14 @@ function createInvite(sessionToken, info) {
 }
 
 function emailInvite_(email, name, link) {
-  sendMail_(email, 'Complete your employee information form',
+  sendMail_(email, companyName_() + ': complete your employee information form',
     mailShell_('Welcome, ' + name,
-      '<p>Please complete your employee information form. Have your TIN, SSS, PhilHealth and Pag-IBIG numbers, ' +
-      'Pre-Employment Medical and NBI clearance scans ready (PDF, JPG or PNG, up to 5 MB each).</p>' +
-      '<p><a href="' + esc_(link) + '" style="background:#0f4c81;color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none">Open my form</a></p>' +
+      '<p>Please complete your employee information form. Have these ready:</p>' +
+      '<ul style="margin:0 0 8px;padding-left:20px">' +
+      '<li>TIN, SSS, PhilHealth and Pag-IBIG numbers (with photos of the IDs)</li>' +
+      '<li>Pre-Employment Medical and NBI clearance scans</li>' +
+      '<li>Files in PDF, JPG or PNG, up to 5 MB each</li></ul>' +
+      mailButton_('Open my form', link) +
       '<p>This personal link expires in ' + INVITE_DAYS + ' days.</p>'));
 }
 

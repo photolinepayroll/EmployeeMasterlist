@@ -249,6 +249,12 @@ function pageUrl_(page, params) {
   return base.replace(/\/+$/, '') + '/' + (page === 'login' ? 'index' : page) + '.html' + (q ? '?' + q : '');
 }
 
+/** Public logo for emails: served from the GitHub Pages site (docs/img/logo.png). */
+function logoUrl_() {
+  const base = getProp_('FRONTEND_URL');
+  return base ? base.replace(/\/+$/, '') + '/img/logo.png' : '';
+}
+
 function companyName_() {
   return getProp_('COMPANY_NAME') || APP_NAME;
 }
@@ -375,13 +381,36 @@ function fileIds_(emp) {
 }
 
 function sendMail_(to, subject, html) {
-  MailApp.sendEmail({ to: to, subject: subject, htmlBody: html, name: companyName_() + ' HR' });
+  MailApp.sendEmail({ to: to, subject: subject, htmlBody: html, name: companyName_() });
 }
 
+/** Branded email layout: table-based, inline CSS only, 600px card that shrinks on phones. */
 function mailShell_(title, bodyHtml) {
-  return '<div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;color:#1f2937">' +
-    '<h2 style="color:#0f4c81;margin-bottom:4px">' + esc_(companyName_()) + '</h2>' +
-    '<h3 style="margin-top:0">' + esc_(title) + '</h3>' + bodyHtml +
-    '<p style="color:#6b7280;font-size:12px;margin-top:24px">This is an automated message from the HR Employee Masterlist system. ' +
-    'Do not forward this email; links in it are personal to you.</p></div>';
+  const font = 'font-family:Arial,Helvetica,sans-serif;';
+  return '<div style="background:#f0f4ff;padding:24px 12px;' + font + '">' +
+    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;margin:0 auto;background:#ffffff;border-radius:12px;border-collapse:separate;overflow:hidden">' +
+    '<tr><td style="padding:24px 28px 16px;border-bottom:4px solid #1428e6">' +
+    '<img src="' + logoUrl_() + '" width="200" height="60" alt="' + esc_(companyName_()) + '" style="display:block;border:0;outline:none;height:auto;max-width:200px">' +
+    '</td></tr>' +
+    '<tr><td style="padding:24px 28px 8px;' + font + 'color:#1f2937;font-size:16px;line-height:1.5">' +
+    '<h1 style="margin:0 0 14px;font-size:22px;line-height:1.3;color:#111827">' + esc_(title) + '</h1>' + bodyHtml +
+    '</td></tr>' +
+    '<tr><td style="padding:16px 28px 24px;' + font + 'font-size:12px;line-height:1.5;color:#4b5563;border-top:1px solid #e5e7eb">' +
+    '<b style="color:#1428e6">' + esc_(companyName_()) + '</b> &middot; <i style="color:#c8161d">plenty to smile about!</i><br>' +
+    'This is an automated message. Do not forward this email; links and codes in it are personal to you.' +
+    '</td></tr></table></div>';
+}
+
+/** Bulletproof call-to-action button plus the raw link underneath as a fallback. */
+function mailButton_(label, url) {
+  return '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:18px 0 10px"><tr>' +
+    '<td style="background:#1428e6;border-radius:8px"><a href="' + esc_(url) + '" style="display:inline-block;padding:14px 28px;color:#ffffff;font-weight:bold;font-size:16px;text-decoration:none;font-family:Arial,Helvetica,sans-serif">' + esc_(label) + '</a></td>' +
+    '</tr></table>' +
+    '<p style="margin:0 0 12px;font-size:12px;color:#4b5563;word-break:break-all">Button not working? Copy this link into your browser:<br>' +
+    '<a href="' + esc_(url) + '" style="color:#1428e6">' + esc_(url) + '</a></p>';
+}
+
+/** One-time code shown large in a light box. */
+function mailCode_(code) {
+  return '<p style="margin:16px 0;padding:16px;background:#eef2ff;border:1px solid #c7d2fe;border-radius:8px;text-align:center;font-family:Consolas,Menlo,monospace;font-size:32px;letter-spacing:8px;font-weight:bold;color:#1428e6">' + esc_(code) + '</p>';
 }

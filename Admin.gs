@@ -134,7 +134,7 @@ function returnApplication(token, appId, remarks) {
       sendMail_(inv.Email, 'Please update your employee information form',
         mailShell_('Action needed',
           '<p>HR reviewed your form and needs corrections:</p><blockquote style="border-left:4px solid #f59e0b;margin:0;padding:6px 12px;background:#fffbeb">' +
-          esc_(remarks) + '</blockquote><p><a href="' + esc_(pageUrl_('apply', { t: newTok })) + '">Open my form</a></p>'));
+          esc_(remarks) + '</blockquote>' + mailButton_('Open my form', pageUrl_('apply', { t: newTok }))));
     }
     audit_(s.email, s.role, 'RETURNED', appId, remarks);
     return true;

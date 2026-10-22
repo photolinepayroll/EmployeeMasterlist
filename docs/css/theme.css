@@ -1,6 +1,7 @@
-/* Employee Masterlist — design tokens + components.
+/* Photoline HR Portal — design tokens + components.
    Palette: clinical blue / health green (ui-ux-pro-max), tuned for contrast >= 4.5:1. */
 :root{
+  color-scheme:light;
   --bg:#f0f9ff; --surface:#ffffff; --muted:#e8f2f8; --border:#bae6fd; --line:#d6e6f0;
   --ink:#0c4a6e; --ink-2:#3b6480; --primary:#0369a1; --primary-h:#075985; --on-primary:#fff;
   --accent:#15803d; --danger:#b91c1c; --warn:#92400e; --ring:#0284c7;
@@ -10,16 +11,6 @@
   --r:12px; --r-sm:8px; --t:180ms;
   --font:'Fira Sans',system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;
   --mono:'Fira Code',ui-monospace,Consolas,monospace;
-}
-@media (prefers-color-scheme:dark){
-  :root{
-    --bg:#0b1722; --surface:#12212e; --muted:#183042; --border:#25465f; --line:#21394c;
-    --ink:#e6f1f8; --ink-2:#9db8ca; --primary:#38bdf8; --primary-h:#7dd3fc; --on-primary:#06202f;
-    --accent:#4ade80; --danger:#f87171; --warn:#fbbf24; --ring:#38bdf8;
-    --s-pending-bg:#4a3a0b; --s-pending:#fcd34d; --s-ok-bg:#12351f; --s-ok:#86efac;
-    --s-bad-bg:#4a1d1d; --s-bad:#fca5a5; --s-info-bg:#272a5a; --s-info:#c7d2fe; --s-off-bg:#2b3640; --s-off:#cbd5e1;
-    --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.25);
-  }
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
@@ -37,8 +28,11 @@ svg.i{width:1.15em;height:1.15em;stroke:currentColor;fill:none;stroke-width:2;st
 .wrap{max-width:1120px;margin:0 auto;padding:20px 16px}.narrow{max-width:780px}.xnarrow{max-width:460px}
 .topbar{background:var(--surface);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10}
 .topbar .wrap{display:flex;align-items:center;gap:12px;padding-top:10px;padding-bottom:10px;flex-wrap:wrap}
-.brand{display:flex;align-items:center;gap:10px;font-weight:600;flex:1;min-width:200px}
-.logo{width:34px;height:34px;border-radius:9px;background:var(--primary);color:var(--on-primary);display:grid;place-items:center}
+.brand{display:flex;align-items:center;gap:12px;font-weight:600;flex:1;min-width:0}
+.brand img{height:38px;width:auto;display:block}
+.brand .sub{font-weight:600;color:var(--ink-2);font-size:.85rem;line-height:1.2;border-left:2px solid var(--line);padding-left:12px}
+.hero-logo{display:block;margin:0 auto 18px;width:min(200px,60%);height:auto}
+.bar-search{flex:1 1 220px;max-width:360px;min-width:0}
 .brand small{display:block;font-weight:400;color:var(--ink-2);font-size:.78rem;line-height:1.1}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:20px;margin-bottom:16px}
 .card.flat{box-shadow:none}
@@ -142,6 +136,7 @@ img.vmedia{-webkit-user-drag:none}
 @media (min-width:768px){.viewer-arrow{display:inline-flex}}
 @media (prefers-reduced-motion:reduce){.viewer,.vmedia{transition:none!important}}
 .kv{display:grid;grid-template-columns:170px 1fr;gap:6px 14px;margin:0}.kv dt{color:var(--ink-2);font-size:.88rem}.kv dd{margin:0;word-break:break-word}
-@media (max-width:640px){.kv{grid-template-columns:1fr}.wrap{padding:14px 12px}.card{padding:16px}}
+@media (max-width:640px){.kv{grid-template-columns:1fr}.wrap{padding:14px 12px}.card{padding:16px}.brand img{height:30px}.brand .sub{font-size:.78rem;padding-left:10px}.bar-search{max-width:none;flex-basis:100%}.row>select{max-width:none!important;flex:1 1 140px}.drawer .panel{padding:12px}}
+@media (max-width:380px){.brand .sub{display:none}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 @media print{.topbar,.btn,.tabs,.no-print{display:none!important}body{background:#fff;color:#000}.card{box-shadow:none;border-color:#999}}

@@ -130,3 +130,12 @@ function addEmployeeColumns() {
   s.getRange(2, start, Math.max(s.getMaxRows() - 1, 1), missing.length).setNumberFormat('@');
   console.log('Added columns: ' + missing.join(', '));
 }
+
+/** Run in the editor: sends sample branded emails to the script owner to check layout and logo. */
+function previewMail_() {
+  const to = Session.getEffectiveUser().getEmail();
+  sendMail_(to, companyName_() + ': your login code 123456',
+    mailShell_('Your login code', '<p>Use this code to sign in to the ' + esc_(companyName_()) + '.</p>' + mailCode_('123456') +
+      '<p>The code expires in 10 minutes. If you did not request it, you can ignore this email.</p>'));
+  emailInvite_(to, 'Sample Applicant', pageUrl_('apply', { t: 'sample' }));
+}

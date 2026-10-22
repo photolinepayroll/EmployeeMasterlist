@@ -4,7 +4,7 @@
  * and they are sent to the browser to render forms and mirror validation.
  */
 
-const APP_NAME = 'Employee Masterlist';
+const APP_NAME = 'Photoline HR Portal';
 
 const SHEETS = {
   EMP: 'Employees',

@@ -32,7 +32,7 @@ function esc(s) {
 /* ---------- page chrome ---------- */
 function topbar(subtitle, actionsHtml) {
   return '<a class="skip" href="#main">Skip to content</a><header class="topbar"><div class="wrap">' +
-    '<div class="brand"><span class="logo">' + icon('users') + '</span><span>' + esc(window.APP_NAME) + '<small>' + esc(subtitle) + '</small></span></div>' +
+    '<div class="brand"><img src="img/logo.png" width="127" height="38" alt="' + esc(window.APP_NAME) + '"><span class="sub">' + esc(subtitle) + '</span></div>' +
     (actionsHtml || '') + '</div></header>';
 }
 

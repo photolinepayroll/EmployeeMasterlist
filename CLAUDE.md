@@ -42,4 +42,4 @@ pm` first. Git Bash heredocs with apostrophes fail; write helper scripts with th
 - Match existing style: function-level `use strict`-free V8 JS in `.gs` (private helpers end with `_`, only `API_ALLOWED_` functions are callable from the browser), plain CSS tokens in `docs/css/theme.css`, no frameworks.
 - Every protected server function starts with `requireRole_(token, roles)`. Report roles must never receive Rate, IDs, addresses or documents.
 - Validation is mirrored in `docs/js/ui.js` (`checkField`) for UX only; the server (`validateFields_` in `Util.gs`) is authoritative.
-- Design: ui-ux-pro-max "clean corporate" (blue/green, Fira Sans/Fira Code, light + dark, 44px targets, SVG icons, no emoji).
+- Design: ui-ux-pro-max "clean corporate" (blue/green, Fira Sans/Fira Code, light mode only, 44px targets, SVG icons, no emoji). Brand: "Photoline HR Portal"; logo `docs/img/logo.png` (header via `topbar()`, login page, and emails via `logoUrl_()` in `Util.gs` from `FRONTEND_URL`, so push `docs/` before testing mail).
