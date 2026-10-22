@@ -1,4 +1,4 @@
-# RESUME — where we stopped (2026-10-21)
+# RESUME — where we stopped (2026-10-22)
 
 Read `CLAUDE.md` first for architecture, IDs and gotchas. This file is the session handoff.
 
@@ -8,10 +8,9 @@ Read `CLAUDE.md` first for architecture, IDs and gotchas. This file is the sessi
 - Frontend rebuilt (ui-ux-pro-max, clean corporate) in `docs/`: `index.html` (staff login), `apply.html?t=…` (7-step applicant form), `admin.html` (HR dashboard, review drawer, invite, resend invite, export, users), `reports.html` (payroll read-only, CSV/Excel/print).
 - GitHub repo pushed (`main`), Pages enabled from `/docs`; site serves the login page.
 - Old server-rendered HTML pages removed from the Apps Script project; `doGet` forwards old links to the site.
-- Added helpers in `Setup.gs`: `setAppUrlNow`, `setFrontendUrlNow`, `addSystemTab`, `saveAppUrl`, `setCompanyName`.
-
-## Attachments update (2026-10-22, committed locally, NOT yet pushed/deployed)
-Gov-ID photos, PSA, referral, IQ/psych results and 4 multi-file application slots added (spec: `docs/superpowers/specs/2026-10-22-applicant-attachments-design.md`). Rollout: `clasp push --force` + redeploy, run `addEmployeeColumns()` in the editor, then `git push`.
+- Added helpers in `Setup.gs`: `setAppUrlNow`, `setFrontendUrlNow`, `addSystemTab`, `saveAppUrl`, `setCompanyName`, `addEmployeeColumns`.
+- Attachments (live, deployment @11, `addEmployeeColumns()` already run): photo for each gov ID, PSA, optional referral letter, IQ + psychological results, 4 multi-file application slots (Resume, Kasunduan, Pagsang-ayon, Breach/Karagdagang Kasunduan, up to 5 files each). Required: SSS, PhilHealth, Pag-IBIG (number + photo), PSA, IQ, Psych, all 4 slots. TIN optional (photo only if number entered). Spec: `docs/superpowers/specs/2026-10-22-applicant-attachments-design.md`.
+- Speed work (live): per-request read memo and targeted row lookups (`Util.gs`), 2-min staff cache (`activeUser_`), uploads create the Drive file outside the script lock, payroll report cached 30 min (`cacheGetBig_`, cleared when `REPORT_KEYS` columns change), client keeps last report/list in sessionStorage and shows it while refreshing, photos compressed to 1600 px before upload, SheetJS preloaded, opened documents cached per session. Not done: keep-warm trigger (needs extra scope, unproven), audit-write batching (text-format risk), array-compact report rows. Not yet measured: compare Network timings before/after.
 
 ## Pending / next steps (user must run in the Apps Script editor)
 1. Run `setFrontendUrlNow()` so emails link to the GitHub Pages site (until then invites fail with "Frontend URL is not set").
@@ -28,5 +27,6 @@ Gov-ID photos, PSA, referral, IQ/psych results and 4 multi-file application slot
 - Optional: Sheet-bound script (Extensions → Apps Script) was declined; it would change the web app URL.
 - Optional hardening: rate-limit failed invite-token lookups; add Data Privacy retention notice text reviewed by HR/legal.
 
-## Not committed
-`CLAUDE.md` and `RESUME.md` were just created and are not committed. They contain no secrets (the deployment ID is already public in `docs/js/config.js`).
+## Not tested yet
+Full live flow with the new 9-step form (uploads, required-doc blocking, HR drawer grouping, PAYROLL denied on `getFile`). On clasp: Git Bash/PowerShell need `$env:Path += ";$env:APPDATA
+pm"` first.

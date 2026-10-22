@@ -15,7 +15,7 @@ HR web app: a secure masterlist of hired employees. Applicants fill a form from 
 - Roles: `HR_ADMIN` (everything), `PAYROLL`/`ACCOUNTING`/`AUDIT` (limited report: Bio ID, Full Name, Account No., Account Type only, APPROVED rows).
 - Staff log in with email + 6-digit emailed code (CacheService sessions, 6h). Applicants use invite tokens (stored as SHA-256 hashes, 14-day expiry).
 - Field rules (formats, required fields, admin vs applicant fields) live in `Config.gs` (`APPLICANT_FIELDS`, `ADMIN_FIELDS`); the browser gets them from the server, so change them only there.
-- Attachments: every upload is a `type:'file'` (one Drive id) or `type:'files'` (JSON list, listed in `MULTI_FILE_FIELDS`) field in `APPLICANT_FIELDS` + `FILE_FIELDS`. `reqIf:'TIN'` makes a photo required when that number is filled. New `EMP_COLS` go at the END (rows are written by position); then run `addEmployeeColumns()` in the Apps Script editor once.
+- Attachments: every upload is a `type:'file'` (one Drive id) or `type:'files'` (JSON list, listed in `MULTI_FILE_FIELDS`) field in `APPLICANT_FIELDS` + `FILE_FIELDS`. `req:true` makes it mandatory; `reqIf:'TIN'` makes a photo required only when that number is filled (TIN is the only optional ID; SSS/PhilHealth/Pag-IBIG are required). New `EMP_COLS` go at the END (rows are written by position); then run `addEmployeeColumns()` in the Apps Script editor once.
 
 ## Commands
 - Push backend: `clasp push --force` (run from repo root; `.claspignore` excludes `docs/`, README, `.git`).
@@ -25,6 +25,9 @@ HR web app: a secure masterlist of hired employees. Applicants fill a form from 
 - Local preview: `py -3 -m http.server 8765` inside `docs/` (use `py -3`; plain `python` is not installed).
 
 ## Gotchas learned
+- Speed: `readAll_`/`findBy_` are memoized per request and cleared by writes and `lock_`; large sheets use key-column lookups. Cached payroll report (`rpt_limited`) is dropped by `updateObj_` when a `REPORT_KEYS` column changes, so write employee data only through `updateObj_`. Staff lookups are cached 2 min (`usr_`); `upsertUser` clears it.
+- On this PC `clasp` is not on PATH: add `$env:APPDATA
+pm` first. Git Bash heredocs with apostrophes fail; write helper scripts with the Write tool.
 - Apps Script loads files alphabetically: never reference constants from another file at top level (use `Config.gs` for shared constants; `Admin.gs` once broke on `ROLES`).
 - Two files with the same base name (`Admin.gs` + `Admin.html`) are not allowed in one Apps Script project.
 - `clasp create` overwrites `appsscript.json` with a default; restore the scopes/`webapp` block before pushing.
