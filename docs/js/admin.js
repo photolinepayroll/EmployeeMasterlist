@@ -2,6 +2,7 @@
   if (!requireLogin(['HR_ADMIN'])) return;
   let B = null, apps = [], cur = null;
   const fileCache = {};
+  let viewerItems = [];
 
   $('#chrome').innerHTML = topbar('HR Admin',
     '<span class="mute" style="font-size:.85rem">' + esc(Session.email) + '</span>' +
@@ -95,7 +96,11 @@
     wireBlurValidation($('#aform'), B.applicantSpec);
     wireBlurValidation($('#mform'), B.adminSpec);
     if (!canEdit) $$('#panel input,#panel select,#panel textarea').forEach(el => { el.disabled = true; });
-    $$('[data-file]').forEach(a => { a.onclick = () => openFile(a.dataset.file); });
+    $$('[data-vi]').forEach(a => {
+      const go = () => openViewer(viewerItems, +a.dataset.vi, loadFile);
+      a.onclick = go;
+      a.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } };
+    });
     if ($('#resend')) {
       $('#resend').onclick = function () {
         const b = this; busy(b, true, 'Sending…');
@@ -118,26 +123,27 @@
       const v = f[s.k], list = Array.isArray(v) ? v : (v ? [v] : []);
       const g = s.group || 'Documents';
       if (!byName[g]) { byName[g] = []; groups.push(g); }
-      list.forEach(d => byName[g].push([s.label + ': ' + d.name, d.id]));
+      list.forEach(d => byName[g].push({ id: d.id, name: d.name, label: s.label + ': ' + d.name }));
     });
-    const chip = i => '<span class="chip" tabindex="0" role="button" data-file="' + esc(i[1]) + '">' + icon('file') + ' ' + esc(i[0]) + '</span>';
+    // One flat list, in the order shown, so Next/Previous in the preview follows the drawer.
+    viewerItems = [];
+    const chip = d => {
+      viewerItems.push(d);
+      return '<span class="chip" tabindex="0" role="button" data-vi="' + (viewerItems.length - 1) + '">' + icon('file') + ' ' + esc(d.label) + '</span>';
+    };
     const h = groups.filter(g => byName[g].length).map(g => '<p class="mute" style="margin:10px 0 4px;font-size:.85rem">' + esc(g) + '</p>' + byName[g].map(chip).join('')).join('');
     return h || '<span class="mute">No documents uploaded.</span>';
   }
 
-  function openFile(id) {
-    const show = f => {
-      const url = URL.createObjectURL(f.blob);
-      const w = window.open(url, '_blank', 'noopener');
-      if (!w) downloadBlob(f.name, f.mime, f.blob);
-    };
-    if (fileCache[id]) return show(fileCache[id]);
-    toast('Opening file…');
-    secure('getFile', cur.AppID, id).then(f => {
+  /** Loads one document for the preview (cached per session, so revisiting is instant). */
+  function loadFile(item) {
+    if (fileCache[item.id]) return Promise.resolve(fileCache[item.id]);
+    const appId = cur.AppID;
+    return secure('getFile', appId, item.id).then(f => {
       f.blob = b64ToBlob(f.base64, f.mime); f.base64 = '';
-      fileCache[id] = f;   // reopening the same document in this session is instant
-      show(f);
-    }).catch(e => toast(e.message));
+      fileCache[item.id] = f;
+      return f;
+    });
   }
 
   const gather = () => Object.assign(readFields($('#aform'), B.applicantSpec), readFields($('#mform'), B.adminSpec));
