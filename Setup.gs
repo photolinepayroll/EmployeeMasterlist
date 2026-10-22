@@ -139,3 +139,6 @@ function previewMail_() {
       '<p>The code expires in 10 minutes. If you did not request it, you can ignore this email.</p>'));
   emailInvite_(to, 'Sample Applicant', pageUrl_('apply', { t: 'sample' }));
 }
+
+/** Editor-visible wrapper (the Run dropdown hides names ending in "_"). */
+function previewMail() { previewMail_(); }
