@@ -38,6 +38,10 @@ pm` first. Git Bash heredocs with apostrophes fail; write helper scripts with th
 - Bash heredocs sometimes reject files containing apostrophes/escapes; use the Write tool for such files. The Edit tool de-escapes `\uXXXX` sequences.
 - `.clasp.json` and `PROMPT.txt` are git-ignored. No secrets belong in the repo (it is public).
 
+- Emails: all go through `sendMail_` + `mailShell_(title, body)` in `Util.gs` (table layout, logo from `logoUrl_()` = `FRONTEND_URL/img/logo.png`); use `mailButton_(label,url)` and `mailCode_(code)`. Push `docs/` before testing mail or the logo is broken. Run `previewMail` in the editor to send samples (the Run dropdown hides names ending in `_`, hence the wrapper).
+- Branding assets: `docs/img/logo.png` (header/emails), `favicon.png` (blue "Ph"), `apple-touch-icon.png`; source art `PLANS/logo.png` (untracked, 72 dpi: call `SetResolution(96,96)` before cropping with System.Drawing). HR review drawer is a centered modal (full-screen on phones).
+- Tooling: Python is not installed in Git Bash; use Node for scripted edits and PowerShell for `py -3 -m http.server 8765`.
+
 ## Conventions
 - Match existing style: function-level `use strict`-free V8 JS in `.gs` (private helpers end with `_`, only `API_ALLOWED_` functions are callable from the browser), plain CSS tokens in `docs/css/theme.css`, no frameworks.
 - Every protected server function starts with `requireRole_(token, roles)`. Report roles must never receive Rate, IDs, addresses or documents.
