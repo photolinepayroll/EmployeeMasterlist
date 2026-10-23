@@ -15,6 +15,7 @@ Read `CLAUDE.md` first for architecture, IDs and gotchas. This file is the sessi
 
 - Legacy import + employment status (code live: GCash account type, deployment @14; commits on main). `Import.gs` was a temporary loader (removed); cleaned data is in `PLANS/import-clean.tsv` (git-ignored, 55 cols, 528 rows). Employment status = `EmpStatus`/`EmpStatusDate`/`EmpStatusNote` (ACTIVE/ON_LEAVE/RESIGNED/AWOL; blank = ACTIVE), set by HR via `setEmploymentStatus`; payroll report defaults to Active only, exports disabled until fresh data loads, rows with no account no./type flagged.
 - Application PDF (HR drawer, `docs/js/pdfform.js`, backend `logRecordPdf`, deployment @16) is live. Structure tested in Node (10-page sample with PNG, PDF, corrupt PDF, missing file); not yet checked visually in a PDF viewer. Open one real employee PDF and check layout and printing.
+- Remove applicant (permanent delete of non-approved records, Drive folder to trash) is live; test it once with a throwaway invite (check the rows below the deleted one are intact and the old link stops working).
 
 ## Pending / next steps (user must run in the Apps Script editor)
 - Legacy import DONE (528 rows, statuses backfilled; `Import.gs` removed, deployment @15). Still do: delete the "Import" tab in the Sheet (holds personal data), delete `PLANS/import-clean.tsv`, and work through `PLANS/import-issues.csv` (58 missing account types, 18 missing account numbers, 24 remarks to check, AWOL date for Bio ID 52976).

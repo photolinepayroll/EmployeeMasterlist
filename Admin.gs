@@ -45,6 +45,46 @@ function getApplication(token, appId) {
   };
 }
 
+/**
+ * Permanently removes an applicant who declined or never proceeded: invite rows, the Employees row and
+ * (to the Drive trash, recoverable ~30 days) the uploaded documents. Approved employees are never deleted
+ * here (use Resigned/AWOL). The audit line carries no personal data.
+ */
+function deleteApplicant(token, appId, reason) {
+  const s = requireRole_(token, HR_ONLY);
+  reason = String(reason || '').trim().slice(0, 100);
+  if (!reason) throw new Error('Choose a reason for removing this applicant.');
+  return lock_(function () {
+    const emp = findBy_(SHEETS.EMP, 'AppID', appId);
+    if (!emp) throw new Error('Record not found.');
+    if (emp.Status === STATUS.APPROVED) throw new Error('Approved employees cannot be deleted. Set Resigned or AWOL instead.');
+    const ids = fileIds_(emp), folderId = emp.FolderId;
+
+    // Rows shift after every delete, so look the row up again each time.
+    for (let i = 0; i < 20; i++) {
+      SHEET_MEMO_ = {};
+      const inv = readAll_(SHEETS.INV).filter(function (r) { return r.AppID === appId; }).pop();
+      if (!inv) break;
+      sh_(SHEETS.INV).deleteRow(inv._row);
+    }
+    SHEET_MEMO_ = {};
+    const row = findBy_(SHEETS.EMP, 'AppID', appId);
+    if (row) sh_(SHEETS.EMP).deleteRow(row._row);
+    SHEET_MEMO_ = {};
+
+    let note = '';
+    try {
+      if (folderId) DriveApp.getFolderById(folderId).setTrashed(true);
+      else ids.forEach(function (id) { DriveApp.getFileById(id).setTrashed(true); });
+    } catch (e) {
+      console.error('Drive trash failed for ' + appId + ': ' + e);
+      note = ' (documents could not be trashed automatically)';
+    }
+    audit_(s.email, s.role, 'APPLICANT_DELETED', appId, emp.Status + ': ' + reason + note);
+    return { warning: note ? 'Record deleted, but the Drive folder could not be moved to the trash. Remove it manually.' : '' };
+  });
+}
+
 /** Audit trail for the application PDF that HR builds in the browser (each document fetch is audited by getFile). */
 function logRecordPdf(token, appId) {
   const s = requireRole_(token, HR_ONLY);

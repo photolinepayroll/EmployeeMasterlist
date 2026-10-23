@@ -127,6 +127,13 @@
       a.onclick = go;
       a.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } };
     });
+    if (r.Status !== 'APPROVED') {
+      const rm = document.createElement('div');
+      rm.className = 'row end';
+      rm.innerHTML = '<button class="btn danger sm" id="rmapp" type="button">Remove applicant…</button>';
+      $('#panel').appendChild(rm);
+      $('#rmapp').onclick = doRemove;
+    }
     if ($('#resend')) {
       $('#resend').onclick = function () {
         const b = this; busy(b, true, 'Sending…');
@@ -196,6 +203,26 @@
       busy(btn, false);
       if (e.fields) { showErrors($('#panel'), e.fields); toast('Please fix the highlighted fields.'); } else toast(e.message);
     });
+  }
+
+  function doRemove() {
+    if ($('#rmbox')) return;
+    const box = document.createElement('div');
+    box.id = 'rmbox'; box.className = 'card';
+    box.innerHTML = '<div class="notice bad">' + icon('info') + '<div>This permanently deletes the invite, the form data and the uploaded documents. Documents stay in the Drive trash for about 30 days. It cannot be undone from the portal.</div></div>' +
+      '<label for="rmwhy">Reason</label><select id="rmwhy"><option>Declined the job</option><option>No response</option><option>Duplicate entry</option><option>Other</option></select>' +
+      '<label for="rmnote">Details (optional)</label><input id="rmnote" maxlength="60"><div class="err" id="rmerr" role="alert"></div>' +
+      '<div class="row end" style="margin-top:10px"><button class="btn ghost sm" id="rmcancel" type="button">Cancel</button><button class="btn danger sm" id="rmgo" type="button">Delete permanently</button></div>';
+    $('#panel').appendChild(box);
+    box.scrollIntoView({ behavior: 'smooth' });
+    $('#rmcancel').onclick = () => box.remove();
+    $('#rmgo').onclick = function () {
+      const b = this, note = $('#rmnote').value.trim(), reason = $('#rmwhy').value + (note ? ' - ' + note : '');
+      busy(b, true, 'Deleting…');
+      secure('deleteApplicant', cur.AppID, reason).then(res => {
+        toast(res && res.warning ? res.warning : 'Applicant deleted'); closeDrawer(); loadApps();
+      }).catch(e => { busy(b, false); $('#rmerr').textContent = e.message; });
+    };
   }
 
   function doReturn() {
