@@ -99,8 +99,8 @@ function localAge(birth) {
 function todayStr() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
 
 /** Mirrors the server rules for fast feedback. The server re-validates everything. */
-function checkField(f, v) {
-  if (!v) return f.req ? f.label + ' is required.' : '';
+function checkField(f, v, data) {
+  if (!v) return f.req && !(f.reqUnless && data && data[f.reqUnless.k] === f.reqUnless.v) ? f.label + ' is required.' : '';
   if (f.pattern && !new RegExp(f.pattern).test(v)) return f.label + ' format is invalid' + (f.hint ? ' (' + f.hint + ')' : '') + '.';
   if (f.type === 'date') {
     if (isNaN(Date.parse(v))) return f.label + ' is not a valid date.';
@@ -129,7 +129,7 @@ function validateSpec(root, spec) {
   const data = readFields(root, spec), errors = {};
   spec.forEach(f => {
     if (f.type === 'file' || f.type === 'files') return;
-    const m = checkField(f, data[f.k]); if (m) errors[f.k] = m;
+    const m = checkField(f, data[f.k], data); if (m) errors[f.k] = m;
   });
   showErrors(root, errors);
   return { data, errors, ok: !Object.keys(errors).length };
@@ -138,7 +138,7 @@ function validateSpec(root, spec) {
 function wireBlurValidation(root, spec) {
   spec.forEach(f => {
     const el = $('[data-k="' + f.k + '"]', root);
-    if (el) el.addEventListener('blur', () => setErr(root, f.k, checkField(f, el.value.trim())));
+    if (el) el.addEventListener('blur', () => setErr(root, f.k, checkField(f, el.value.trim(), readFields(root, spec))));
   });
 }
 

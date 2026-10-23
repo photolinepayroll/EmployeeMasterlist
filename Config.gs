@@ -80,7 +80,7 @@ const REPORT_KEYS = ['Status', 'BioID', 'LastName', 'FirstName', 'MiddleName', '
 
 const SEX = ['Male', 'Female'];
 const SUFFIXES = ['', 'Jr.', 'Sr.', 'II', 'III', 'IV', 'V'];
-const ACCOUNT_TYPES = ['Payroll Savings', 'Other Bank'];
+const ACCOUNT_TYPES = ['Payroll Savings', 'Other Bank', 'GCash'];
 
 const PATTERNS = {
   email: '^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$',
@@ -160,9 +160,9 @@ const ADMIN_FIELDS = [
   { k: 'Region', label: 'Region', req: true, type: 'select', list: 'Regions' },
   { k: 'Rate', label: 'Rate (PHP)', req: true, pattern: PATTERNS.rate, hint: 'e.g. 645.00' },
   { k: 'AccountType', label: 'Disbursement Account Type', req: true, type: 'select', options: ACCOUNT_TYPES },
-  { k: 'Bank', label: 'Payroll Savings Bank', req: true, list: 'Banks', datalist: true, max: 80 },
-  { k: 'AccountNumber', label: 'Payroll Savings Account Number', req: true, pattern: PATTERNS.account, hint: 'Digits and dashes only' },
-  { k: 'AccountName', label: 'Account Name', req: true, max: 100 }
+  { k: 'Bank', label: 'Payroll Savings Bank', req: true, reqUnless: { k: 'AccountType', v: 'GCash' }, list: 'Banks', datalist: true, max: 80 },
+  { k: 'AccountNumber', label: 'Payroll Savings Account Number', req: true, pattern: PATTERNS.account, hint: 'Digits and dashes only (GCash: mobile number)' },
+  { k: 'AccountName', label: 'Account Name', req: true, reqUnless: { k: 'AccountType', v: 'GCash' }, max: 100 }
 ];
 
 /** Columns in the limited report for Payroll / Accounting / Audit. Nothing else is ever sent to them. */

@@ -3,3 +3,9 @@
 node_modules/
 *.log
 PROMPT.txt
+
+# personal data from the legacy import
+PLANS/*.xlsx
+PLANS/import-*
+PLANS/branch-map.csv
+PLANS/branches-list.txt

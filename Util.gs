@@ -327,7 +327,8 @@ function validateFields_(spec, data, lists, partial) {
     const present = Object.prototype.hasOwnProperty.call(data, f.k);
     if (!present && partial) return;
     const v = present && data[f.k] != null ? String(data[f.k]).trim() : '';
-    const err = fieldError_(f, v, lists, partial);
+    const waived = f.reqUnless && String(data[f.reqUnless.k] || '').trim() === f.reqUnless.v;
+    const err = fieldError_(f, v, lists, partial || waived);
     if (err) errors[f.k] = err;
     else clean[f.k] = v;
   });
