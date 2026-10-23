@@ -45,6 +45,13 @@ function getApplication(token, appId) {
   };
 }
 
+/** Audit trail for the application PDF that HR builds in the browser (each document fetch is audited by getFile). */
+function logRecordPdf(token, appId) {
+  const s = requireRole_(token, HR_ONLY);
+  audit_(s.email, s.role, 'EXPORT_PDF', String(appId || '').slice(0, 40), '');
+  return true;
+}
+
 /**
  * HR sets an approved employee's employment status (ACTIVE / ON_LEAVE / RESIGNED / AWOL).
  * The date is the effective date (last day or leave start) and is informational: the change applies now.

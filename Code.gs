@@ -30,7 +30,7 @@ const API_ALLOWED_ = [
   'requestLoginCode', 'verifyLoginCode', 'logout', 'whoAmI',
   'getApplicationByToken', 'saveDraft', 'uploadFile', 'removeDoc', 'submitApplication',
   'adminBootstrap', 'listApplications', 'getApplication', 'getFile', 'saveRecord',
-  'approveApplication', 'returnApplication', 'setEmploymentStatus', 'exportFullMasterlist', 'listUsers', 'upsertUser',
+  'approveApplication', 'returnApplication', 'setEmploymentStatus', 'logRecordPdf', 'exportFullMasterlist', 'listUsers', 'upsertUser',
   'createInvite', 'resendInvite', 'revokeInvite',
   'getLimitedMasterlist', 'logDownload'
 ];

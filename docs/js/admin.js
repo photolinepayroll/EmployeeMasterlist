@@ -75,6 +75,7 @@
   function drawRecord() {
     const r = cur, canEdit = r.Status === 'PENDING' || r.Status === 'APPROVED';
     let h = '<div class="row" style="margin-bottom:12px"><h2 class="grow">' + esc(r.AppID) + ' <span class="pill ' + esc(r.Status) + '">' + esc(r.Status) + '</span></h2>' +
+      '<button class="btn ghost sm" id="pdf" type="button">' + icon('download') + ' Application PDF</button>' +
       '<button class="btn ghost sm" id="close" type="button">' + icon('x') + ' Close</button></div>';
     if (r.Remarks) h += '<div class="notice">' + icon('info') + '<div>Remarks sent to applicant: ' + esc(r.Remarks) + '</div></div>';
     const canResend = r.Status === 'INVITED' || r.Status === 'RETURNED';
@@ -105,6 +106,7 @@
     }
     $('#panel').innerHTML = h;
     $('#close').onclick = closeDrawer;
+    $('#pdf').onclick = downloadPdf;
     wireBlurValidation($('#aform'), B.applicantSpec);
     wireBlurValidation($('#mform'), B.adminSpec);
     if (!canEdit) $$('#panel input,#panel select,#panel textarea').forEach(el => { el.disabled = true; });
@@ -139,6 +141,21 @@
       $('#appr').onclick = function () { submitRecord('approveApplication', this, 'Approved'); };
       if ($('#ret')) $('#ret').onclick = doReturn;
     }
+  }
+
+  /** Builds the filled form + requirements checklist + all documents as one PDF (see pdfform.js). */
+  function downloadPdf() {
+    const b = $('#pdf'), rec = cur, label = b.innerHTML;
+    b.disabled = true; b.textContent = 'Preparing…';
+    buildApplicationPdf(B, rec, loadFile, (d, n, text) => { b.textContent = text; })
+      .then(blob => {
+        const who = (rec.record.BioID || rec.AppID) + '_' + String(rec.record.LastName || 'Applicant').replace(/[^A-Za-z0-9]+/g, '');
+        downloadBlob(who + '_Application_' + stamp() + '.pdf', 'application/pdf', blob);
+        secure('logRecordPdf', rec.AppID).catch(() => {});
+        toast('PDF ready');
+      })
+      .catch(e => toast(e.message))
+      .then(() => { if ($('#pdf')) { $('#pdf').disabled = false; $('#pdf').innerHTML = label; } });
   }
 
   function filesHtml(f) {
