@@ -18,6 +18,8 @@ HR web app: a secure masterlist of hired employees. Applicants fill a form from 
 - Document preview (zoom/rotate/next/previous, images + PDF) is `openViewer()` in `docs/js/viewer.js`, used by `admin.js`; add its script tag to any page that needs it.
 - Attachments: every upload is a `type:'file'` (one Drive id) or `type:'files'` (JSON list, listed in `MULTI_FILE_FIELDS`) field in `APPLICANT_FIELDS` + `FILE_FIELDS`. `req:true` makes it mandatory; `reqIf:'TIN'` makes a photo required only when that number is filled (TIN is the only optional ID; SSS/PhilHealth/Pag-IBIG are required). New `EMP_COLS` go at the END (rows are written by position); then run `addEmployeeColumns()` in the Apps Script editor once.
 
+- Employment status: `EmpStatus` (ACTIVE/ON_LEAVE/RESIGNED/AWOL, blank = ACTIVE), `EmpStatusDate`, `EmpStatusNote` (HR only); `EmpStatus`/`EmpStatusDate` are in `REPORT_KEYS` and the limited report (note is never sent). Only `setEmploymentStatus` changes them (audited `EMP_STATUS`). Report UI defaults to Active only; exports stay disabled until fresh data loads. Account type `GCash` makes Bank/Account Name optional (`reqUnless` in `ADMIN_FIELDS`). Legacy rows have AppID `LEG-<BioID>`.
+
 ## Commands
 - Push backend: `clasp push --force` (run from repo root; `.claspignore` excludes `docs/`, README, `.git`).
 - Redeploy same URL: `clasp deploy -i AKfycbxPvG_kKGLYBR3HzSJoZ6_jcctfnkPJ_jVMWcKV41JYEbPS28LVP39dKSE2EQZyGpI -d "note"`.
