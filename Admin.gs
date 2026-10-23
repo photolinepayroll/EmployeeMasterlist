@@ -11,7 +11,8 @@ function adminBootstrap(token) {
     steps: APPLY_STEPS,
     lists: getLists_(),
     roles: ALL_ROLES,
-    accountTypes: ACCOUNT_TYPES
+    accountTypes: ACCOUNT_TYPES,
+    empStatuses: EMP_STATUSES
   };
 }
 
@@ -21,7 +22,8 @@ function listApplications(token) {
     const hasName = r.LastName || r.FirstName;
     return {
       AppID: r.AppID, Status: r.Status, BioID: r.BioID, Name: hasName ? fullName_(r) : '',
-      Email: r.Email, Branch: r.Branch, SubmittedAt: r.SubmittedAt, UpdatedAt: r.UpdatedAt, DateHired: r.DateHired
+      Email: r.Email, Branch: r.Branch, SubmittedAt: r.SubmittedAt, UpdatedAt: r.UpdatedAt, DateHired: r.DateHired,
+      EmpStatus: r.Status === STATUS.APPROVED ? (EMP_STATUSES.indexOf(r.EmpStatus) >= 0 ? r.EmpStatus : 'ACTIVE') : ''
     };
   }).reverse();
 }
@@ -37,8 +39,36 @@ function getApplication(token, appId) {
   });
   return {
     AppID: emp.AppID, Status: emp.Status, Remarks: emp.Remarks, SubmittedAt: emp.SubmittedAt,
-    ReviewedBy: emp.ReviewedBy, ReviewedAt: emp.ReviewedAt, record: rec, files: filesInfo_(emp)
+    ReviewedBy: emp.ReviewedBy, ReviewedAt: emp.ReviewedAt, record: rec, files: filesInfo_(emp),
+    EmpStatus: EMP_STATUSES.indexOf(emp.EmpStatus) >= 0 ? emp.EmpStatus : 'ACTIVE',
+    EmpStatusDate: emp.EmpStatusDate || '', EmpStatusNote: emp.EmpStatusNote || ''
   };
+}
+
+/**
+ * HR sets an approved employee's employment status (ACTIVE / ON_LEAVE / RESIGNED / AWOL).
+ * The date is the effective date (last day or leave start) and is informational: the change applies now.
+ * Updating EmpStatus drops the cached payroll report (REPORT_KEYS in updateObj_).
+ */
+function setEmploymentStatus(token, appId, status, date, note) {
+  const s = requireRole_(token, HR_ONLY);
+  status = String(status || '').trim();
+  date = String(date || '').trim();
+  note = String(note || '').trim().slice(0, 200);   // updateObj_ neutralises formula characters
+  if (EMP_STATUSES.indexOf(status) < 0) throw new Error('Choose a valid employment status.');
+  if (status !== 'ACTIVE' && !date) throw new Error('Enter the effective date (last day or leave start).');
+  if (date && !isValidDate_(date)) throw new Error('Effective date is not valid.');
+  return lock_(function () {
+    const emp = findBy_(SHEETS.EMP, 'AppID', appId);
+    if (!emp) throw new Error('Record not found.');
+    if (emp.Status !== STATUS.APPROVED) throw new Error('Only approved employees have an employment status.');
+    const old = EMP_STATUSES.indexOf(emp.EmpStatus) >= 0 ? emp.EmpStatus : 'ACTIVE';
+    updateObj_(SHEETS.EMP, emp._row, {
+      EmpStatus: status, EmpStatusDate: status === 'ACTIVE' ? '' : date, EmpStatusNote: note, UpdatedAt: nowIso_()
+    });
+    audit_(s.email, s.role, 'EMP_STATUS', appId, emp.BioID + ': ' + old + ' -> ' + status + (date ? ' (' + date + ')' : '') + (note ? ' ' + note : ''));
+    return { EmpStatus: status, EmpStatusDate: status === 'ACTIVE' ? '' : date, EmpStatusNote: note };
+  });
 }
 
 /** Streams a document to HR as base64 (Drive files themselves stay private). */
@@ -110,6 +140,7 @@ function approveApplication(token, appId, data) {
     const out = Object.assign({}, v1.clean, v2.clean, {
       Status: STATUS.APPROVED, ReviewedBy: s.email, ReviewedAt: nowIso_(), Remarks: '', UpdatedAt: nowIso_()
     });
+    if (EMP_STATUSES.indexOf(emp.EmpStatus) < 0) out.EmpStatus = 'ACTIVE';
     updateObj_(SHEETS.EMP, emp._row, out);
     try {
       if (emp.FolderId) DriveApp.getFolderById(emp.FolderId).setName(out.BioID + '_' + safeName_(out.LastName));

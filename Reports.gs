@@ -11,9 +11,17 @@ function getLimitedMasterlist(token) {
     const rows = readAll_(SHEETS.EMP)
       .filter(function (r) { return r.Status === STATUS.APPROVED; })
       .map(function (r) {
-        return { BioID: r.BioID, FullName: fullName_(r), AccountNumber: r.AccountNumber, AccountType: r.AccountType };
+        const st = EMP_STATUSES.indexOf(r.EmpStatus) >= 0 ? r.EmpStatus : 'ACTIVE';
+        // Issue = something that could send money to a wrong or empty account; shown only for people still being paid.
+        const issue = st !== 'ACTIVE' ? '' : !r.AccountNumber ? 'No account number' : !r.AccountType ? 'No account type' : '';
+        return {
+          BioID: r.BioID, FullName: fullName_(r), AccountNumber: r.AccountNumber, AccountType: r.AccountType,
+          EmpStatus: st, EmpStatusDate: r.EmpStatusDate || '', Issue: issue
+        };
       })
-      .sort(function (a, b) { return a.FullName.localeCompare(b.FullName); });
+      .sort(function (a, b) {
+        return ((a.EmpStatus === 'ACTIVE' ? 0 : 1) - (b.EmpStatus === 'ACTIVE' ? 0 : 1)) || a.FullName.localeCompare(b.FullName);
+      });
     out = { columns: LIMITED_REPORT_COLS, rows: rows, generatedAt: nowIso_(), company: companyName_() };
     cachePutBig_('rpt_limited', out);
   }

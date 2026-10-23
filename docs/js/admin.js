@@ -3,6 +3,7 @@
   let B = null, apps = [], cur = null;
   const fileCache = {};
   let viewerItems = [];
+  const EMP_LABEL = { ACTIVE: 'Active', ON_LEAVE: 'On Leave', RESIGNED: 'Resigned', AWOL: 'AWOL' };
 
   $('#chrome').innerHTML = topbar('HR Admin',
     '<span class="mute" style="font-size:.85rem">' + esc(Session.email) + '</span>' +
@@ -44,10 +45,11 @@
     const counts = { PENDING: 0, RETURNED: 0, INVITED: 0, APPROVED: 0 };
     apps.forEach(a => { if (counts[a.Status] != null) counts[a.Status]++; });
     $('#stats').innerHTML = Object.keys(counts).map(k => '<div class="stat"><b>' + counts[k] + '</b><span>' + k + '</span></div>').join('');
-    const q = $('#q').value.toLowerCase(), fs = $('#fstatus').value;
-    const list = apps.filter(a => (!fs || a.Status === fs) && (!q || [a.Name, a.BioID, a.Email, a.Branch, a.AppID].join(' ').toLowerCase().indexOf(q) >= 0));
+    const q = $('#q').value.toLowerCase(), fs = $('#fstatus').value, fe = $('#femp').value;
+    const list = apps.filter(a => (!fs || a.Status === fs) && (!fe || a.EmpStatus === fe) && (!q || [a.Name, a.BioID, a.Email, a.Branch, a.AppID].join(' ').toLowerCase().indexOf(q) >= 0));
     $('#rows').innerHTML = list.map(a =>
       '<tr class="click" tabindex="0" data-id="' + esc(a.AppID) + '"><td><span class="pill ' + esc(a.Status) + '">' + esc(a.Status) + '</span></td><td>' +
+      (a.EmpStatus ? '<span class="pill ' + esc(a.EmpStatus) + '">' + esc(EMP_LABEL[a.EmpStatus] || a.EmpStatus) + '</span>' : '') + '</td><td>' +
       esc(a.Name || '(not filled yet)') + '</td><td class="mono">' + esc(a.BioID) + '</td><td>' + esc(a.Branch) + '</td><td>' + esc(a.Email) + '</td><td>' + esc(a.SubmittedAt) + '</td></tr>').join('');
     $('#empty').classList.toggle('hide', list.length > 0);
     $('#empty').textContent = 'No records match.';
@@ -56,7 +58,7 @@
       tr.onkeydown = e => { if (e.key === 'Enter') openRecord(tr.dataset.id); };
     });
   }
-  $('#q').oninput = drawApps; $('#fstatus').onchange = drawApps; $('#refresh').onclick = loadApps;
+  $('#q').oninput = drawApps; $('#fstatus').onchange = drawApps; $('#femp').onchange = drawApps; $('#refresh').onclick = loadApps;
 
   /* ---------- review drawer ---------- */
   function openDrawer() { $('#drawer').classList.add('open'); $('#drawer').setAttribute('aria-hidden', 'false'); }
@@ -80,6 +82,16 @@
       h += '<div class="notice info">' + icon('info') + '<div>This entry is ' + esc(r.Status) + ' — waiting on the applicant, so it cannot be approved yet.' +
         (canResend ? '<div class="row" style="margin-top:10px"><button class="btn sm" id="resend" type="button">' + icon('send') + ' Resend invite</button></div><div id="resendout"></div>' : '') + '</div></div>';
     }
+    if (r.Status === 'APPROVED') {
+      h += '<div class="card" id="eform"><h3>Employment status <span class="pill ' + esc(r.EmpStatus) + '">' + esc(EMP_LABEL[r.EmpStatus] || r.EmpStatus) + '</span></h3>' +
+        '<p class="mute" style="margin:0 0 10px;font-size:.85rem">Payroll sees this on the report and pays Active employees only. Change it as soon as it takes effect.</p><div class="grid">' +
+        '<div class="fld"><label for="es_status">Status</label><select id="es_status">' +
+        B.empStatuses.map(s => '<option value="' + s + '"' + (s === r.EmpStatus ? ' selected' : '') + '>' + esc(EMP_LABEL[s] || s) + '</option>').join('') + '</select></div>' +
+        '<div class="fld"><label for="es_date">Effective date (last day / leave start)</label><input id="es_date" type="date" value="' + esc(r.EmpStatusDate) + '"></div>' +
+        '<div class="fld full"><label for="es_note">Note (HR only)</label><input id="es_note" maxlength="200" value="' + esc(r.EmpStatusNote) + '"></div></div>' +
+        '<div class="err" id="es_err" role="alert"></div>' +
+        '<div class="row end" style="margin-top:10px"><button class="btn" id="es_save" type="button">Update employment status</button></div></div>';
+    }
     h += '<div class="card" id="aform"><h3>Applicant information</h3><div class="grid">';
     B.applicantSpec.forEach(f => { if (f.type !== 'file' && f.type !== 'files') h += fieldHtml(f, r.record[f.k], B.lists, 'a'); });
     h += '</div></div><div class="card"><h3>Documents</h3>' + filesHtml(r.files) + '</div>';
@@ -96,6 +108,18 @@
     wireBlurValidation($('#aform'), B.applicantSpec);
     wireBlurValidation($('#mform'), B.adminSpec);
     if (!canEdit) $$('#panel input,#panel select,#panel textarea').forEach(el => { el.disabled = true; });
+    if ($('#es_save')) {
+      $('#es_save').onclick = function () {
+        const st = $('#es_status').value, date = $('#es_date').value, note = $('#es_note').value;
+        $('#es_err').textContent = '';
+        if (st !== 'ACTIVE' && !date) { $('#es_err').textContent = 'Enter the effective date.'; return; }
+        if ((st === 'RESIGNED' || st === 'AWOL') && !confirm('Mark this employee as ' + EMP_LABEL[st] + '? Payroll will stop seeing them in the Active list.')) return;
+        const b = this; busy(b, true, 'Saving…');
+        secure('setEmploymentStatus', cur.AppID, st, date, note).then(() => {
+          toast('Employment status updated'); closeDrawer(); loadApps();
+        }).catch(e => { busy(b, false); $('#es_err').textContent = e.message; });
+      };
+    }
     $$('[data-vi]').forEach(a => {
       const go = () => openViewer(viewerItems, +a.dataset.vi, loadFile);
       a.onclick = go;

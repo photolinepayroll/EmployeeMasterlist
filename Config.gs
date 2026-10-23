@@ -48,7 +48,8 @@ const EMP_COLS = [
   // Added later: always append new columns at the END (rows are written by position). Run addEmployeeColumns() once.
   'TINFileId', 'SSSFileId', 'PhilHealthFileId', 'PagIBIGFileId',
   'PSAFileId', 'ReferralFileId', 'IQFileId', 'PsychFileId',
-  'ResumeDocs', 'KasunduanDocs', 'PagsangAyonDocs', 'BreachDocs'
+  'ResumeDocs', 'KasunduanDocs', 'PagsangAyonDocs', 'BreachDocs',
+  'EmpStatus', 'EmpStatusDate', 'EmpStatusNote'
 ];
 const INV_COLS = ['TokenHash', 'AppID', 'Email', 'Name', 'Branch', 'CreatedBy', 'CreatedAt', 'ExpiresAt', 'Status'];
 const USER_COLS = ['Email', 'Role', 'Active', 'AddedBy', 'AddedAt'];
@@ -76,7 +77,10 @@ const FILE_FIELDS = {
 const MULTI_FILE_FIELDS = ['OtherDocs', 'ResumeDocs', 'KasunduanDocs', 'PagsangAyonDocs', 'BreachDocs'];
 const MAX_SLOT_DOCS = 5;
 /** Employee columns that appear in the payroll report; changing any of them drops the cached report. */
-const REPORT_KEYS = ['Status', 'BioID', 'LastName', 'FirstName', 'MiddleName', 'Suffix', 'AccountNumber', 'AccountType'];
+const REPORT_KEYS = ['Status', 'BioID', 'LastName', 'FirstName', 'MiddleName', 'Suffix', 'AccountNumber', 'AccountType', 'EmpStatus', 'EmpStatusDate'];
+
+/** Employment status (separate from the application Status). Blank on an APPROVED row means ACTIVE. */
+const EMP_STATUSES = ['ACTIVE', 'ON_LEAVE', 'RESIGNED', 'AWOL'];
 
 const SEX = ['Male', 'Female'];
 const SUFFIXES = ['', 'Jr.', 'Sr.', 'II', 'III', 'IV', 'V'];
@@ -170,7 +174,9 @@ const LIMITED_REPORT_COLS = [
   { k: 'BioID', label: 'Bio ID' },
   { k: 'FullName', label: 'Full Name' },
   { k: 'AccountNumber', label: 'Account No.' },
-  { k: 'AccountType', label: 'Account Type' }
+  { k: 'AccountType', label: 'Account Type' },
+  { k: 'EmpStatus', label: 'Status' },
+  { k: 'EmpStatusDate', label: 'Effective' }
 ];
 
 const DEFAULT_LISTS = {

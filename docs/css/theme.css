@@ -65,7 +65,9 @@ input[type=checkbox]{width:20px;min-height:20px;accent-color:var(--primary)}
 .pill{display:inline-block;padding:2px 10px;border-radius:99px;font-size:.75rem;font-weight:600;letter-spacing:.02em;background:var(--s-off-bg);color:var(--s-off)}
 .pill.PENDING{background:var(--s-pending-bg);color:var(--s-pending)}.pill.APPROVED{background:var(--s-ok-bg);color:var(--s-ok)}
 .pill.RETURNED{background:var(--s-bad-bg);color:var(--s-bad)}.pill.INVITED{background:var(--s-info-bg);color:var(--s-info)}
-.notice{display:flex;gap:10px;padding:12px 14px;border-radius:var(--r-sm);margin:12px 0;background:var(--s-pending-bg);color:var(--s-pending);font-size:.92rem}
+.pill.ACTIVE{background:var(--s-ok-bg);color:var(--s-ok)}.pill.ON_LEAVE{background:var(--s-pending-bg);color:var(--s-pending)}
+.pill.RESIGNED{background:var(--s-off-bg);color:var(--s-off)}.pill.AWOL{background:var(--s-bad-bg);color:var(--s-bad)}
+tr.inactive td{color:var(--s-bad)}tr.inactive td .pill{color:inherit}.notice{display:flex;gap:10px;padding:12px 14px;border-radius:var(--r-sm);margin:12px 0;background:var(--s-pending-bg);color:var(--s-pending);font-size:.92rem}
 .notice.bad{background:var(--s-bad-bg);color:var(--s-bad)}.notice.ok{background:var(--s-ok-bg);color:var(--s-ok)}.notice.info{background:var(--muted);color:var(--ink)}
 .notice>div{min-width:0;word-break:break-word}
 

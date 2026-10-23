@@ -31,10 +31,13 @@
         <select id="fstatus" style="max-width:190px" aria-label="Filter by status">
           <option value="">All statuses</option><option>PENDING</option><option>RETURNED</option><option>INVITED</option><option>APPROVED</option><option>CANCELLED</option>
         </select>
+        <select id="femp" style="max-width:190px" aria-label="Filter by employment status">
+          <option value="">All employment</option><option value="ACTIVE">Active</option><option value="ON_LEAVE">On Leave</option><option value="RESIGNED">Resigned</option><option value="AWOL">AWOL</option>
+        </select>
         <button class="btn ghost sm" id="refresh" type="button"></button>
       </div>
       <div class="tablewrap"><table>
-        <thead><tr><th>Status</th><th>Name</th><th>Bio ID</th><th>Branch</th><th>Email</th><th>Submitted</th></tr></thead>
+        <thead><tr><th>Status</th><th>Employment</th><th>Name</th><th>Bio ID</th><th>Branch</th><th>Email</th><th>Submitted</th></tr></thead>
         <tbody id="rows"></tbody>
       </table></div>
       <div class="mute center" id="empty" style="padding:16px">Loading…</div>

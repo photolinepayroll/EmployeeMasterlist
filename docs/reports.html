@@ -18,13 +18,17 @@
 <main id="main" class="wrap">
   <div class="notice info no-print">
     <span id="shield"></span>
-    <div>Confidential and read-only. This list shows only Bio ID, Full Name, Account No. and Account Type. Do not share outside Payroll, Accounting and Audit.</div>
+    <div>Confidential and read-only. This list shows only Bio ID, Full Name, Account No., Account Type and employment status. Do not share outside Payroll, Accounting and Audit.</div>
   </div>
+  <div class="notice bad no-print hide" id="statnote" role="status"></div>
   <div class="card">
     <div class="row" style="margin-bottom:12px">
       <div class="bar-search"><input id="q" type="search" placeholder="Search name, Bio ID, account no.…" aria-label="Search"></div>
       <select id="ftype" style="max-width:210px" aria-label="Filter by account type">
         <option value="">All account types</option><option>Payroll Savings</option><option>Other Bank</option><option>GCash</option>
+      </select>
+      <select id="fstat" style="max-width:190px" aria-label="Filter by employment status">
+        <option value="ACTIVE">Active only</option><option value="">All employees</option><option value="ON_LEAVE">On Leave</option><option value="RESIGNED">Resigned</option><option value="AWOL">AWOL</option><option value="NOT_ACTIVE">Not active (all)</option>
       </select>
       <span class="grow"></span>
       <span class="mute" id="count" role="status"></span>
